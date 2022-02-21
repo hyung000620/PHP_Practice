@@ -1,0 +1,108 @@
+html>/**/body{overflow-y:scroll}
+body,p,h1,h2,h3,h4,h5,h6,ul,ol,li,dl,dt,dd,table,th,td,form,fieldset,legend,input,textarea,button,select{margin:0;padding:0}
+body,input,textarea,select,button,table,div{"Noto Sans KR" !important;	font-style: normal  !important;font-family:"Noto Sans KR",'����',Dotum,AppleGothic,Sans-serif;font-size:13px;font-weight:400}
+html>/**/body{height:100%;min-height:100%;}
+
+.cls{float:left}
+#wrap{width:100%;background-color:blue;color:white}
+header {
+    position: fixed;
+    top: 0; left: 0;
+    height: 100px;
+    width: 100%;
+    background-color: rgb(187, 181, 181);
+    display: flex;
+    justify-content: space-between;
+  }
+.main {
+    min-height: 100%;
+    margin-top: 100px;
+}
+
+footer {
+    position: fixed;
+    bottom: 0; left: 0;
+    height: 100px;
+    width: 100%;
+    background-color: rgb(187, 181, 181);
+    text-align: center;
+
+  }
+.aside {
+    float: left;
+    border: 1px solid;
+    height: 100vh;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    background-color: rgb(123, 150, 88);
+    text-align: center;
+    vertical-align:top;
+}
+a{text-decoration: none; }
+
+.search_form .in {
+    height: 30px;
+    font-size: 13px;
+    border: none;
+    border-bottom: 1px black solid;
+}
+.search {
+    font-size: 13px;
+    border: none;
+    background-color: green;
+    width: 50px;
+    height: 30px;
+    border-radius: 15px;
+    color: #fff;
+    cursor: pointer;
+  }
+ 
+.tbl_c_list{
+    border-collapse : collapse;
+}
+.tbl_c_list #lsThead{
+    padding: 10px;
+    color: rgb(187, 181, 181);
+    border-bottom: 3px solid rgb(187, 181, 181);
+    text-align: center;
+}
+.tbl_c_list #lsTbody{
+    color:#669;
+    padding: 10px;
+    border-bottom:1px solid #ddd;
+}
+
+.tbl_c_list #lsTbody tr:hover td {
+    color:#004;
+}
+.btn_lightgray{
+    background-color: #e7e7e7;
+    border-color: #cccccc;
+    color :#000;
+}
+
+.btn_box_l{
+    display: inline-block;
+    padding:3px 0;
+    font-size:13px;
+    font-weight: normal;
+    border:1px solid transparent;
+    vertical-align: middle;
+    cursor:pointer;
+    border-radius: 10px 0px 0px 10px;
+    background-color: #1B43A9;
+    margin-right: -5px;
+}
+.btn_box_r{
+    display: inline-block;
+    padding:3px 0;
+    font-size:13px;
+    font-weight: normal;
+    border:1px solid transparent;
+    vertical-align: middle;
+    cursor:pointer;
+    border-radius: 0px 10px 10px 0px;
+
+}
+
