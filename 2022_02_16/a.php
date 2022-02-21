@@ -15,7 +15,7 @@
                 <div>
                     <span id="search1" class="search">검색1</span></div>
                 <div>
-                    <span id="search2" class="search">검색2</span></div>
+                   dd <span id="search2" class="search">검색2</span></div>
             </form>
         </section>
         <section title="리스트">
