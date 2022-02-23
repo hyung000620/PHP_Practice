@@ -50,12 +50,13 @@ a{text-decoration: none; }
 .search {
     font-size: 13px;
     border: none;
-    background-color: green;
-    width: 50px;
+    background-color: #1B43A9;
+    width: 100px;
     height: 30px;
     border-radius: 15px;
     color: #fff;
     cursor: pointer;
+    top: 5px;
   }
  
 .tbl_c_list{
@@ -105,4 +106,103 @@ a{text-decoration: none; }
     border-radius: 0px 10px 10px 0px;
 
 }
+.sel_tbl {
+    border: 1px solid #ccc;
+    border-collapse: separate;
+    border-spacing: 1px;
+    text-align: left;
+    line-height: 1.5;
+    border-top: 1px solid #ccc;
+    margin : 0 auto;
+  }
+.sel_tbl .sel_tbody th {
+    width: 150px;
+    padding: 10px;
+    font-weight: bold;
+    vertical-align: top;
+    border-bottom: 1px solid #ccc;
+  }
+.sel_tbl .sel_tbody td {
+    width: 350px;
+    padding: 10px;
+    vertical-align: top;
+    border-bottom: 1px solid #ccc;
+  }
+.search_result{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 
+.holy{
+    font-size: 20px;
+    color: #FF6C21;
+}
+
+.blue{
+    font-size: 20px;
+    color: #0000FF;
+}
+
+.black{
+    font-size:20px;
+    color: #000000;
+}
+
+.cal_container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.tbl_response {
+    border : 1px solid #999;
+    border-collapse: collapse;
+}
+.tbl_response th {
+    border: 1px solid #999;
+    text-transform: uppercase;
+}
+
+.tbl_response td {
+    border: 1px solid #999;
+    height: 5em;
+    width: 5em;
+    padding: 5px;
+    vertical-align: top;
+}
+.tbl_response td:hover {
+    background-color: rgb(209, 198, 198);
+}
+.tbl_req {
+    font-size: 20px;
+}
+
+.tbl_req tr {
+    display: flex;
+    flex-direction: column;
+}
+
+.modal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal_body {
+    position : absolute;
+    top: 50%;
+    left: 50%;
+    width: 400px;
+    height: 600px;
+    padding: 40px;
+    text-align: center;
+    background-color: rgb(255,255,255);
+    border-radius: 10px;
+    box-shadow: 0 2px 3px 0 rgba(34, 36 38, 0.15);
+    transform: translateX(-50%) translateY(-50%);  
+}
