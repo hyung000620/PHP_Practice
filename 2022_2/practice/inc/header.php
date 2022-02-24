@@ -6,6 +6,8 @@
     include_once($_SERVER["DOCUMENT_ROOT"]."/practice/inc/arr.php");
     include_once($_SERVER["DOCUMENT_ROOT"]."/practice/inc/pdo.php");
     include_once($_SERVER["DOCUMENT_ROOT"]."/practice/inc/paramChk.php");
+    include($_SERVER["DOCUMENT_ROOT"]."/inc/login_chk.php");
+
 
 
     setlocale(LC_ALL, "ko_KR.utf-8")
