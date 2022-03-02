@@ -68,7 +68,7 @@ include($_SERVER["DOCUMENT_ROOT"]."/inc/footer.php");
 
 <script>
     var tossPayments = TossPayments("test_ck_XLkKEypNArWaNyp1leA3lmeaxYG5");
-    var orderId = new Date().getTime();
+    var orderId = <?=$order_no?>;
      // "카드 : 1" 혹은 "가상계좌 : 2"
     var name = <?="'".$client_name."'";?>;
     $("#payment-button").click(function () {
@@ -76,7 +76,7 @@ include($_SERVER["DOCUMENT_ROOT"]."/inc/footer.php");
         var paymentData = {
             amount: <?=$amt;?>,
             orderId: orderId,
-            orderName: "탱크옥션",
+            orderName:'탱크옥션',
             customerName: name,
             successUrl: "https://kb.tankauction.com/member/Z_success.php",
             failUrl: "https://kb.tankauction.com/member/fail_test.php",
@@ -87,6 +87,5 @@ include($_SERVER["DOCUMENT_ROOT"]."/inc/footer.php");
         }
 
         tossPayments.requestPayment(method, paymentData);
-        
     });
 </script>
