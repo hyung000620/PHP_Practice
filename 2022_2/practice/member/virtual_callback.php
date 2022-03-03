@@ -4,39 +4,30 @@ include($_SERVER["DOCUMENT_ROOT"]."/inc/header.php");
 $postData = file_get_contents('php://input');
 $json = json_decode($postData);
 
-$status_arr=array(
-    "READY" => "준비됨",
-    "IN_PROGRESS" => "진행중",
-    "WAITING_FOR_DEPOSIT" => "가상계좌 입금 대기 중",
-    "DONE" => "결제 완료됨",
-    "CANCELED" => "결제가 취소됨",
-    "PARTIAL_CANCELED" => "결제가 부분 취소됨",
-    "ABORTED" => "카드 자동 결제 혹은 키인 결제를 할 때 결제 승인에 실패함",
-    "EXPIRED" => "유효 시간(30분)이 지나 거래가 취소됨",
-);
-
 $status=$json->status;
-$orderId=$json->orderId; 
+$order_no=$json->orderId; 
+$orderName=$json->customerName;
+
 if ($status == 'DONE') 
 {
+    $SQL="SELECT * FROM {$my_db}.tm_pay_log WHERE order_no = '{$order_no}' AND name = '{$orderName}'";
+    $stmt=$pdo->prepare($SQL);
+    $stmt->execute();
+    $rs=$stmt->fetch();
+    if($rs)
+    {
+        list($smp,$pay_opt,$pay_code)=explode("|",$rs[log_text]);
+        trim($pay_code);
+    }
     $SQL="UPDATE {$my_db}.tm_pay_log";
     $SQL.=" SET return_status = '{$status}',";
     $SQL.=" status_message = '{$status_arr[$status]}'";
-    $SQL.=" WHERE order_no = '{$orderId}'";
+    $SQL.=" WHERE order_no = '{$order_no}'";
     $stmt=$pdo->prepare($SQL);
     $stmt->execute();
     
-    //로그 파일 생성 - 함수
-    $dir = $_SERVER["DOCUMENT_ROOT"]."/member/log/tossLog";
-    $fileName = date("Ymd").".log";
-    $logfile = fopen($dir."/".$fileName,'a');
-    fwrite($logfile,"==============================================\r\n");
-    fwrite($logfile, "생성 시간 : ".date("YmdHis")."\r\n");
-    fwrite($logfile, "결과 데이터 :".json_encode($json, JSON_UNESCAPED_UNICODE));
-    fwrite($logfile,"\r\n==============================================\r\n");
-    fwrite($logfile,"\r\n");
-    fclose($logfile);
-
+    $client_id = $rs[id];
+    
     $today=date("Y-m-d");
     $smp_arr=explode(",",$smp);
     $dc_flag=false;
@@ -48,8 +39,8 @@ if ($status == 'DONE')
             case 100 :
                 $memo="";
                 $partner_pm=0;
-                $sql="SELECT * FROM {$my_db}.tm_member WHERE id='{$client_id}'";
-                $stmt=$pdo->prepare($sql);
+                $SQL="SELECT * FROM {$my_db}.tm_member WHERE id='{$client_id}'";
+                $stmt=$pdo->prepare($SQL);
                 $stmt->execute();
                 $rs=$stmt->fetch();
                 if($rs)
@@ -73,6 +64,7 @@ if ($status == 'DONE')
                     $SQL.="money='{$price}',state='{$state}',validity={$expire},startdate=CURDATE(),staff='',memo='{$memo}' WHERE idx='{$rs[idx]}' AND id='{$client_id}'";
                     $stmt=$pdo->prepare($SQL);
                     $stmt->execute();
+                    
                 }
                 else	//신규결제
                 {
@@ -111,10 +103,13 @@ if ($status == 'DONE')
                     $stmt->execute();
                 }
                 break;
-        }			
-	}
+            }			
+        }
+        
+    save_log($SQL);
+    
 }
-else
+elseif($staus == 'WAITING_FOR_DEPOSIT')
 {
     $SQL="UPDATE {$my_db}.tm_pay_log";
     $SQL.=" SET return_status = '{$status}',";
