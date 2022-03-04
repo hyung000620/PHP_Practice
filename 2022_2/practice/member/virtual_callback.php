@@ -8,9 +8,10 @@ $status=$json->status;
 $order_no=$json->orderId; 
 $orderName=$json->customerName;
 
+save_log("vittual : ".json_encode($json, JSON_UNESCAPED_UNICODE));
 if ($status == 'DONE') 
 {
-    $SQL="SELECT * FROM {$my_db}.tm_pay_log WHERE order_no = '{$order_no}' AND name = '{$orderName}'";
+    $SQL="SELECT * FROM {$my_db}.tm_pay_log WHERE order_no = '{$order_no}'";
     $stmt=$pdo->prepare($SQL);
     $stmt->execute();
     $rs=$stmt->fetch();
@@ -106,7 +107,7 @@ if ($status == 'DONE')
             }			
         }
         
-    save_log($SQL);
+    //save_log($SQL);
     
 }
 elseif($staus == 'WAITING_FOR_DEPOSIT')
