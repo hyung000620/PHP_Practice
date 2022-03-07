@@ -1,6 +1,7 @@
 <?php
 $page_code="9016";
 include($_SERVER["DOCUMENT_ROOT"]."/inc/header.php");
+include($_SERVER["DOCUMENT_ROOT"]."/member/Toss.php");
 
 $smp= $_SESSION['smp'];
 $pay_opt= $_SESSION['pay_opt'];
@@ -11,31 +12,13 @@ $order_no = $_GET['orderId'];
 $amount = $_GET['amount'];
 
 $log_text=$smp."|".$pay_opt."|".$pay_code;
-$secretKey = 'test_sk_7DLJOpm5QrlmRXDWwOL8PNdxbWnY';
 $url = 'https://api.tosspayments.com/v1/payments/' . $paymentKey;
 $data = ['orderId' => $order_no, 'amount' => $amount];
-$credential = base64_encode($secretKey . ':');
 
-$curlHandle = curl_init($url); //curl 로딩
-curl_setopt_array($curlHandle, [
-    CURLOPT_POST => TRUE, //post 전송 활성화
-    CURLOPT_RETURNTRANSFER => TRUE,
-    CURLOPT_ENCODING => "",
-    CURLOPT_MAXREDIRS => 10,
-    CURLOPT_TIMEOUT => 30,
-    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-    CURLOPT_CUSTOMREQUEST => "POST",
-    CURLOPT_HTTPHEADER => [
-        'Authorization: Basic ' . $credential,
-        'Content-Type: application/json'
-    ],
-    CURLOPT_POSTFIELDS => json_encode($data) //curl에 post값 세팅
-]);
-
-$response = curl_exec($curlHandle);
-$httpCode = curl_getinfo($curlHandle, CURLINFO_HTTP_CODE);
-$isSuccess = $httpCode == 200;
-$responseJson = json_decode($response);
+#toss
+$res=$toss->curl_post($url, $data);
+$isSuccess=$res['resCode']==200;
+$responseJson=$res['resData'];
 
 $account_info = array(
     "accountNumber" => $responseJson->virtualAccount->accountNumber, //계좌번호  
@@ -43,6 +26,8 @@ $account_info = array(
     "dueDate" => $responseJson->virtualAccount->dueDate, // 입금 기한
     "totalAmount" => $responseJson->totalAmount, // 금액
 );
+
+$endDate=date("Y-m-d", strtotime($account_info['dueDate']));
 
 $method=$responseJson->method;
 $status=$responseJson->status;
@@ -54,8 +39,9 @@ if($method=="카드")
 }
 else
 {
-    $bank=($responseJson->virtualAccount->bank)."|".$account_info['accountNumber'];
+    $bank=($responseJson->virtualAccount->bank)."|".$account_info['accountNumber']."|".$endDate;
     $name=$account_info['customerName'];
+    $date.="|".$endDate;
 }
 //로그 처리
 if($isSuccess)
@@ -144,50 +130,41 @@ if($status == 'DONE')
 					break;
 			}			
 		}
-        //로그 저장
-        // save_log(
-        //     "==============================================\r\n"
-        //     ."생성 시간 : ".date("YmdHis")."\r\n"
-        //     ."DB :".$SQL."\r\n"
-        //     ."결과 데이터 :".json_encode($json, JSON_UNESCAPED_UNICODE)
-        //     ."\r\n==============================================\r\n\r\n"
-        // );
 }
 ?>
 
 <div class="lh18">
 	<?
     $html="";
-	if($pay_opt==2)
+	if($pay_opt==4)
 	{	
-        //SMS
-        // $SQL="SELECT mobile FROM {$my_db}.tm_member WHERE id='{$client_id}' LIMIT 1";
-        // $stmt=$pdo->prepare($SQL);
-        // $stmt->execute();
-        
-        // list($day, $hour)=explode("T",$account_info['dueDate']);
-        // $day=$day." 까지";
-        // if($rs=$stmt->fetch())
-        // {
-        //     $msg="계좌번호 :".$account_info['accountNumber']."입금자 :".$account_info['customerName']."\\n";
-        //     $msg="입금기한 :".$day."금액 :".$account_info['totalAmount']."\\n";
-        //     $msg="▣탱크옥션▣\\r\\n연결되었습니다.\\r\\n결제,상담 등은 카톡 https://bit.ly/38LJNqZ";
-        //     $mobile=str_replace("-", "", $rs[mobile]);
-        //     send_sms($mobile, $msg, $client_id);
-        // }
 
-        //Virtual_Info
-
-        // $SQL="SELECT * FROM {$my_db}.tm_pay_log WHERE id='{$client_id}' LIMIT 1";
-        // $stmt=$pdo->prepare($SQL);
-        // $stmt->execute();
-        // if($rs=$stmt->fetch())
-        // {
-        //     list($bank, $account_info)=explode("|",$rs['bank']);
-        //     $virtual_info=array("bank"=>$bank, "account_info"=>$account_info, "name"=>$rs['name']);
-        // }
-
-		$html.="-<span class='f18 bold'> 결제요청이 <span class='red'>완료</span> 되었습니다.<br></span><br>";
+        $SQL="SELECT * FROM {$my_db}.tm_pay_log WHERE id='{$client_id}' AND order_no = '{$order_no}'";
+        $stmt=$pdo->prepare($SQL);
+        $stmt->execute();
+        if($rs=$stmt->fetch())
+        {
+            list($bank,$info,$endDate)=explode("|",$rs['bank']);
+            $endDate=trim($endDate);
+            $html.="-<span class='f18 bold'> 결제요청이 <span class='red'>완료</span> 되었습니다.<br></span><br>";
+            $html.="-<span class='f18 bold'> 가상계좌 정보는 아래와 같습니다.<br></span><br>";
+            $html.="<table class='tbl_grid'>";
+            $html.="<tr height='40'>";
+            $html.="<th>은행</th>";
+            $html.="<th>계좌번호</th>";
+            $html.="<th>입금자명</th>";
+            $html.="<th>입금기한</th>";
+            $html.="<th>금액</th>";
+            $html.="</tr>";
+            $html.="<tr height='40'>";
+            $html.="<td class='center'>{$bank}</td>";
+            $html.="<td class='center'>{$info}</td>";
+            $html.="<td class='center'>{$rs['name']}</td>";
+            $html.="<td class='center bold orange'>{$endDate}</td>";
+            $html.="<td class='center'>{$amount}</td>";
+            $html.="</tr>";
+            $html.="</table>";
+        }
 	}
 	elseif($pay_opt==1)
 	{
@@ -199,5 +176,4 @@ if($status == 'DONE')
     <div class='center' style='padding:20px'><a href='/'><span class='btn_box_ss btn_tank radius_10' style='width:110px'>홈으로 가기</span></a></div>
 </div>    
 
-<? include($_SERVER["DOCUMENT_ROOT"]."/inc/footer.php");
-?>
+<? include($_SERVER["DOCUMENT_ROOT"]."/inc/footer.php");?>

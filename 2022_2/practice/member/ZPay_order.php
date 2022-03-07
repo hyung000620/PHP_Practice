@@ -2,10 +2,27 @@
 $page_code="9016";
 
 include($_SERVER["DOCUMENT_ROOT"]."/inc/header.php");
-
+include($_SERVER["DOCUMENT_ROOT"]."/member/Toss.php");
 $_SESSION['smp'] = $smp;
 $_SESSION['pay_opt'] = $pay_opt;
 $_SESSION['pay_code'] = $pay_code;
+
+#결제정보 일치여부 확인
+$toss->samePay($pay_code, $smp,$amt);
+
+#최소 금액 확인
+if($amt<1000){alertBack('최소 주문 금액 1000원입니다.');}
+
+#포인트
+$SQL="SELECT * FROM {$my_db}.tm_point WHERE id = '{$client_id}'";
+$stmt=$pdo->prepare($SQL);
+$stmt->execute();
+
+$point = 0;
+while($rs=$stmt->fetch())
+{
+    $point = $rs['point'];
+}
 ?>
 <div>회원님께서 신청하신 항목은 아래와 같습니다. 확인 후 결제를 진행 해 주세요.</div>
 <table class="tbl_grid">
@@ -62,6 +79,8 @@ foreach($smp_arr as $v)
 }
 ?>    
 </table>
+<!-- <div class="right bold f15">사용가능 한 포인트 : <?//=number_format($point)?> </div> -->
+<div class="right bold f15">결제할 금액 : <span class="orange no"><?=number_format($amt)?></span>원</div>
 <br>
 <div class="center"><span class='btn_box_ss btn_tank radius_10'  id="payment-button">결제하기</span></div>
 <?
@@ -76,7 +95,7 @@ include($_SERVER["DOCUMENT_ROOT"]."/inc/footer.php");
         클라이언트 키를 TossPayments 함수에 넣고 실행하면
         초기화 도니 객체가 생성됩니다.
     */ 
-    var tossPayments = TossPayments("test_ck_XLkKEypNArWaNyp1leA3lmeaxYG5");
+    var tossPayments = TossPayments("<?=$toss->clientKey?>");
     $("#payment-button").click(function () {
         var method = '<?=$pay_opt==1?'카드':'가상계좌';?>';    
         var paymentData = {
@@ -84,12 +103,12 @@ include($_SERVER["DOCUMENT_ROOT"]."/inc/footer.php");
             orderId: <?=$order_no?>,
             orderName:'탱크옥션',
             customerName: '<?=$client_name?>',
-            successUrl: "https://kb.tankauction.com/member/ZPay_result.php",
-            failUrl: "https://kb.tankauction.com/member/fail_test.php",
+            successUrl: "https://kb.tankauction.com/member/_tospay_result.php",
+            failUrl: "https://kb.tankauction.com/member/_tospay_fail.php",
         };
 
         if (method === '가상계좌') {
-            paymentData.virtualAccountCallbackUrl = 'https://kb.tankauction.com/member/virtual_callback.php'
+            paymentData.virtualAccountCallbackUrl = 'https://kb.tankauction.com/member/_virtual_callback.php'
         }
 
         tossPayments.requestPayment(method, paymentData);
