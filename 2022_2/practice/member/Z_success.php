@@ -56,7 +56,7 @@ if($mode==1 || $mode==2)
   $pay_opt=$log->pay_opt;
   $smp=$log->smp;
   $pay_code=$log->pay_code;
-  $amout=$log->amount;
+  $amt=$log->amt;
 }
 
 #파일로그기록
@@ -67,77 +67,73 @@ switch ($mode)
 {
     case  1  :
         {
-    #카드 결제 > 결과 (결제완료)
-    if($method=="카드" && !is_null($card))
-    {
-      #카드사코드(string)
-      $company=$virtualAccount->card->company;
-      #카드번호(string)
-      $number=$virtualAccount->card->number;
-      #할부개월수(integet)_
-      $installmentPlanMonths=$virtualAccount->card->installmentPlanMonths;
-      #무이자 할부 적용여부(boolean)
-      $isInterestFree=$virtualAccount->card->isInterestFree;
-      #카드사승인번호(string)
-      $approveNo=$virtualAccount->card->approveNo;
-      #카드사포인트사용(boolean)
-      $useCardPoint=$virtualAccount->card->useCardPoint;
-      #카드타입 (string > 신용,체크,기프트)
-      $cardType=$virtualAccount->card->cardType;
-      #카드소유자타입(string > 개인,법인)
-      $ownerType=$virtualAccount->card->ownerType;
-      #카드매출전표 조회 페이지주소(string)
-      $receiptUrl=$virtualAccount->card->receiptUrl;
-      #카드결제 매입 상태(string > READY:매입대기,REQUEST:매입요청,COMPLETED:매입완료,CANCEL_REQUESTED:매입취소요청,CANCELED:매입취소완료)
-      $acquireStatus=$virtualAccount->card->acquireStatus;
-      #db처리  
-      $toss->dbPay($status, $smp, $pay_code, $order_no, $pay_opt, $client_id);
-      
-    }
+            #카드 결제 > 결과 (결제완료)
+            if($method=="카드")
+            {
+                #카드사코드(string)
+                $company=$card->company;
+                #카드번호(string)
+                $number=$card->number;
+                #할부개월수(integet)_
+                $installmentPlanMonths=$card->installmentPlanMonths;
+                #무이자 할부 적용여부(boolean)
+                $isInterestFree=$card->isInterestFree;
+                #카드사승인번호(string)
+                $approveNo=$card->approveNo;
+                #카드사포인트사용(boolean)
+                $useCardPoint=$card->useCardPoint;
+                #카드타입 (string > 신용,체크,기프트)
+                $cardType=$card->cardType;
+                #카드소유자타입(string > 개인,법인)
+                $ownerType=$card->ownerType;
+                #카드매출전표 조회 페이지주소(string)
+                $receiptUrl=$card->receiptUrl;
+                #카드결제 매입 상태(string > READY:매입대기,REQUEST:매입요청,COMPLETED:매입완료,CANCEL_REQUESTED:매입취소요청,CANCELED:매입취소완료)
+                $acquireStatus=$card->acquireStatus;
+                #db처리  
+                $toss->dbPay($status, $smp, $pay_code, $order_no, $pay_opt, $client_id);
+                
+                if($isSuccess)
+                {
+                    $SQL="UPDATE {$my_db}.tm_pay_log SET return_status = '{$status}',paymentkey = '{$paymentKey}' WHERE order_no= {$order_no} AND id = '{$client_id}'";
+                    $stmt=$pdo->prepare($SQL);
+                    $stmt->execute();  
+                }
+            }
 }break;
 case 2  :
     {
-        ###가상계좌신청 > 결과 (결제대기)
-        #toss ip만 허용(/inc/cfg) 
-        // $chk=in_array($_SERVER["REMOTE_ADDR"],$tossPayIP);
-        // if($chk==0)
-        // {
-            //   fileLog("Direct connection IP - VirtualAccount", "IP : {$_SERVER["REMOTE_ADDR"]}");
-            //   alertHref("/","비정상 경로로 접근하셨습니다.");
-            // } 
-            
-            #가상계좌 결제 신청
-            //if($method=="가상계좌" && !@is_null($virtualAccount))
-            if($method=="가상계좌" && !is_null($virtualAccount))
+            if($method=="가상계좌")
             {
                 #발급된 계좌번호(string)
-                $accountNumber=$responseJson->virtualAccount->accountNumber;
+                $accountNumber=$virtualAccount->accountNumber;
                 #가상계좌타입(string > 일반,고정)
-                $accountType=$responseJson->virtualAccount->accountType;
+                $accountType=$virtualAccount->accountType;
                 #가상계좌 발급은행(string)
-                $bank=$responseJson->virtualAccount->bank;
+                $bank=$virtualAccount->bank;
                 #가상계좌 발급한 고객명(string)
-                $customerName=$responseJson->virtualAccount->customerName;
+                $customerName=$virtualAccount->customerName;
                 #입금기한(string)
-                $dueDate=$responseJson->virtualAccount->dueDate;
+                $dueDate=$virtualAccount->dueDate;
                 #가상계좌 만료여부(boolean)
-                $expired=$responseJson->virtualAccount->expired;
+                $expired=$virtualAccount->expired;
                 #정산상태(string > 미정산:INCOMPLETE,정산:COMPLETE
-                $settlementStatus=$responseJson->virtualAccount->settlementStatus;
+                $settlementStatus=$virtualAccount->settlementStatus;
                 #환불처리상태(string >  NONE:해당없음, FAILED:환불실패, PENDING:환불처리중, PARTIAL_FAILED:부분환불실패,COMPLETED:환불완료
-                $refundStatus=$responseJson->virtualAccount->refundStatus;
-                
-                $log_bank=$bank."|".$accountNumber."|".$dueDate;                
-                
-                
+                $refundStatus=$virtualAccount->refundStatus;
+
+                $dueDate=date("Y-m-d", strtotime($dueDate));
+                $log_bank=$bank."|".$accountNumber."|".$dueDate;
+                if($isSuccess)
+                {
+                    $SQL="UPDATE {$my_db}.tm_pay_log SET bank = '{$log_bank}' ,return_status = '{$status}',paymentkey = '{$paymentKey}' WHERE order_no= {$order_no} AND id = '{$client_id}'";
+                    $stmt=$pdo->prepare($SQL);
+                    $stmt->execute();  
+                }
             }
             
-            if($isSuccess)
-            {
-                $SQL="UPDATE {$my_db}.tm_pay_log SET bank = '{$log_bank}' WHERE order_no= '{$order_no}' AND id = '{$client_id}'";
-                $stmt=$pdo->prepare($SQL);
-                $stmt->execute();  
-            }
+            
+            
             
         } break; 
         
@@ -146,7 +142,7 @@ case 2  :
                 //카드,가상계좌 > 오류
                 $message = $_GET['message'];
                 $code = $_GET['code'];
-                alertBack($message);
+                echo $message;
                 
             } break;
         }
@@ -157,7 +153,7 @@ case 2  :
     $html="";
 	if($pay_opt==4)
 	{	
-        $SQL="SELECT * FROM {$my_db}.tm_pay_log WHERE id='{$client_id}' AND order_no = '{$order_no}'";
+        $SQL="SELECT * FROM {$my_db}.tm_pay_log WHERE order_no = {$order_no}";
         $stmt=$pdo->prepare($SQL);
         $stmt->execute();
         if($rs=$stmt->fetch())
@@ -179,7 +175,7 @@ case 2  :
             $html.="<td class='center'>{$info}</td>";
             $html.="<td class='center'>{$rs['name']}</td>";
             $html.="<td class='center bold orange'>{$endDate}</td>";
-            $html.="<td class='center'>{$amount}</td>";
+            $html.="<td class='center'>".number_format($amount)."</td>";
             $html.="</tr>";
             $html.="</table>";
         }
