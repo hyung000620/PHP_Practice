@@ -8,7 +8,7 @@ class Toss
         $this->credential=base64_encode($this->secretKey . ':');
     }
 
-    ##curl
+    ##curl-post
     public function curl_post($url, $data) 
     {
         $curlHandle=curl_init($url);
@@ -33,6 +33,29 @@ class Toss
         curl_close($curlHandle);
         return ['resCode'=>$httpCode, 'resData'=>json_decode($response,true), 'err'=>$err];
     }
+    ##curl-get
+    public function curl_get($url)
+    {
+        $curl = curl_init();
+        curl_setopt_array($curl,
+        [
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => TRUE,
+        CURLOPT_ENCODING => "",
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => "GET",
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Basic ' . $this->credential
+        ],
+        ]);
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
+        curl_close($curl);
+        return ['resData'=>json_decode($response,true), 'err'=>$err];
+    }
+
 
     ##결제정보 일치여부 확인
     public function samePay($pay_code, $smp_arr, $amt, $dc_rate)
@@ -341,6 +364,11 @@ class Toss
       }
       return $kind;     
     }
+
+    ## 거래 정산 조회(하루 동안의 거래기록)
+    public function search_transaction($date){
+        return Toss::curl_get("https://api.tosspayments.com/v1/transactions?startDate=".$date."T00:00:00.0000&endDate=".$date."T23:59:59.999");
+    }
 }
 
 try
@@ -356,9 +384,7 @@ try
        if($client_id=="daemon")
        {
          $toss=new Toss("test_ck_OEP59LybZ8BmOpKDwgJr6GYo7pRe","test_sk_OEP59LybZ8BmOwAwWakr6GYo7pRe");
-       } 
-       else if ($client_id=="sweet123") 
-       {
+       } else if ($client_id=="sweet123") {
          $toss=new Toss("test_ck_OEP59LybZ8BmOpKDwgJr6GYo7pRe","test_sk_ODnyRpQWGrNG0mAaApe8Kwv1M9EN");
        }
        else

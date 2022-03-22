@@ -69,13 +69,13 @@
 
   if($rowCnt==0)
   {
-    $ISQL="INSERT INTO {$my_db}.tm_pay_log SET order_type='{$mode}', wdate=NOW(), order_no={$order_no}, id='{$client_id}', name='{$client_name}', log_text='{$log_data}', order_ip='{$_SERVER['REMOTE_ADDR']}'";
+    $ISQL="INSERT INTO {$my_db}.tm_pay_log SET order_type = '{$pay_opt}',pay_code = '{$pay_code}', wdate=NOW(), order_no={$order_no},id='{$client_id}', name='{$client_name}',amt='{$amt}' ,log_text='{$log_data}', order_ip='{$_SERVER['REMOTE_ADDR']}'";
     $stmt=$pdo->prepare($ISQL);
     $stmt->execute();
   }
   else
   {
-    $USQL="UPDATE {$my_db}.tm_pay_log SET order_type='{$mode}', wdate=NOW(), log_text='{$log_data}', order_ip='{$_SERVER['REMOTE_ADDR']}' WHERE order_no={$order_no} AND id='{$client_id}'"; 
+    $USQL="UPDATE {$my_db}.tm_pay_log SET , wdate=NOW(),amt ='{$amt}', log_text='{$log_data}', order_ip='{$_SERVER['REMOTE_ADDR']}' WHERE order_no={$order_no} AND id='{$client_id}'"; 
     $stmt=$pdo->prepare($USQL);
     $stmt->execute();
   }
@@ -127,8 +127,8 @@ foreach($smp_arr as $v)
           let failURL = "https://" + window.location.hostname + "/member/_tospay_result.php?mode=9";
           tossPayments.requestPayment(method, 
           {
-            amount: <?=$price?>,
-            orderId: <?=$order_no?>,
+            amount: <?=$amt?>,
+            orderId: '<?=$order_no?>',
             orderName: '탱크옥션',
             customerName: "<?=$client_name?>",
             successUrl: returnURL,
@@ -137,13 +137,13 @@ foreach($smp_arr as $v)
         }
         else if(method==="가상계좌")
         {
-          let returnURL = "https://" + window.location.hostname + "/member/_tospay_result.php?mode=2";
+          let returnURL = "https://" + window.location.hostname + "/member/_tospay_result.php?mode=4";
           let failURL = "https://" + window.location.hostname + "/member/_tospay_result.php?mode=9";
-          let virtualURL = "https://" + window.location.hostname + "/member/_virtual_callback.php";
+          let virtualURL = "https://" + window.location.hostname + "/member/success_test.php?mode=10";
           tossPayments.requestPayment(method, 
           {
-            amount: <?=$price?>,
-            orderId: <?=$order_no?>,
+            amount: <?=$amt?>,
+            orderId: '<?=$order_no?>',
             orderName: '탱크옥션',
             useEscrow: false,
             customerName: '<?=$client_name?>',
