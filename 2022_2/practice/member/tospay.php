@@ -12,8 +12,6 @@ $order_no=date("YmdHis").rand(1000,9999);
 
 //이용료 할인
 $allow_pay_custom=false;
-//$result=sql_query("SELECT * FROM {$my_db}.tm_member WHERE id='{$client_id}' LIMIT 0,1");
-//$rs=mysql_fetch_array($result);
 $stmt=$pdo->prepare("SELECT * FROM {$my_db}.tm_member WHERE id='{$client_id}' LIMIT 0,1");
 $stmt->execute();
 $rs=$stmt->fetch();
@@ -33,7 +31,7 @@ if($rs[pay_custom]==1)
 }
 ?>
 <div class="lh28">
-	- 서비스 이용 후 환불이 안되오니 경매정보 <span class="bold">샘플과 사이트를 충분히 검토 후 결제</span> 하시기 바랍니다.&nbsp;<a href="/auction/ca_sample.php"><span class="btn_box_ssss btn_white radius_5" style="line-height:16px">샘플보기</span></a><br>
+	- 서비스 이용 후 환불이 안되오니 경매정보 <span class="bold">샘플과 사이트를 충분히 검토 후 결제</span> 하시기 바랍니다.&nbsp;<a href="/ca/caSample.php"><span class="btn_box_ssss btn_white radius_5" style="line-height:16px">샘플보기</span></a><br>
 	- 당사는 면책조건으로 정보를 제공 되오니, <span class="bold">참고용 자료로만 활용</span> 하시기 바랍니다.<br>
 	- 동시접속은 사이트 이용장애나 보안상의 문제로 제한됩니다.<br>
 	- 세금계산서 발급을 원하시는 경우, 대표자명 또는 회사명으로 입금해 주셔야 합니다.<br>
@@ -82,8 +80,6 @@ if($rs[pay_custom]==1)
 		<th width="90px">12개월</th>
 	</tr>
 <?
-//$result=sql_query("SELECT * FROM {$my_db}.tc_price WHERE use_key=1 ORDER BY sort_num");
-//while($rs=mysql_fetch_array($result))
 $stmt=$pdo->prepare("SELECT * FROM {$my_db}.tc_price WHERE use_key=1 ORDER BY sort_num");
 $stmt->execute();
 while($rs=$stmt->fetch())
@@ -123,17 +119,6 @@ while($rs=$stmt->fetch())
 	//if($rs[state]==99) $bg_grp="bg_red";
 	if($dc_rate && $rs[state]==99)
 	{
-		/*
-		echo "
-		<tr id='row_{$rs[state]}' name='row' class='{$bg_grp}'>
-			<td class='{$tx_grp}'>{$rs[area]}</td>
-			<td>".str_replace("<br>","",$rs[service_area])."</td>
-			<td class='center' style='font-family:돋움체'><label for='chk_{$rs[state]}_1' class='hand'><span class='gray'><strike>{$bp_01}</strike></span><br><input type='checkbox' id='chk_{$rs[state]}_1' name='' value='{$rs[state]}'>{$price_01}</label></td>
-			<td class='center' style='font-family:돋움체'><label for='chk_{$rs[state]}_3' class='hand'><span class='gray'><strike>{$bp_03}</strike></span><br><input type='checkbox' id='chk_{$rs[state]}_3' name='' value='{$rs[state]}'>{$price_03}</label></td>
-			<td class='center' style='font-family:돋움체'><label for='chk_{$rs[state]}_6' class='hand'><span class='gray'><strike>{$bp_06}</strike></span><br><input type='checkbox' id='chk_{$rs[state]}_6' name='' value='{$rs[state]}'>{$price_06}</label></td>
-			<td class='center' style='font-family:돋움체'><label for='chk_{$rs[state]}_12' class='hand'><span class='gray'><strike>{$bp_12}</strike></span><br><input type='checkbox' id='chk_{$rs[state]}_12' name='' value='{$rs[state]}'>{$price_12}</label></td>
-		</tr>";
-		*/
 		echo "
 		<tr height='40' id='row_{$rs[state]}' name='row' class='{$bg_grp}'>
 			<td class='{$tx_grp}'>{$rs[area]}</td>
@@ -172,12 +157,6 @@ while($rs=$stmt->fetch())
 		<th>금액</th>
 	</tr>
 <?
-//$result=sql_query("SELECT * FROM {$my_db}.te_lecture WHERE hide=0 AND (lec_code!=103 AND lec_code!=104 AND lec_code!=117) AND price > 0 AND ctgr BETWEEN 20 AND 22");
-
-//cg_sector : 103~110 까지는 동영상 기사단 
-//$result=sql_query("SELECT * FROM {$my_db}.te_lecture WHERE hide=0 AND cg_kind_mv =0 AND price > 0 AND ctgr BETWEEN 20 AND 22");
-//while($rs=mysql_fetch_array($result))
-//$stmt=$pdo->prepare("SELECT * FROM {$my_db}.te_lecture WHERE hide=0 AND cg_kind_mv =0 AND price > 0 AND ctgr BETWEEN 20 AND 22");
 $stmt=$pdo->prepare("SELECT * FROM {$my_db}.te_lecture WHERE hide=0 AND price > 0 and pay_on=1");
 $stmt->execute();
 while($rs=$stmt->fetch())
@@ -209,8 +188,9 @@ while($rs=$stmt->fetch())
 	<tr  height='40'>
 		<th>결제방법</th>
 		<td>
-			<label for="pay_opt2" class="hand fleft" style="width:100px"><input type="radio" id="pay_opt2" name="pay_opt" value="2" checked class='rdo'> <span class="rdo_ment">가상계좌</span></label> &nbsp;
-			<label for="pay_opt1" class="hand fleft" style="width:100px"><input type="radio" id="pay_opt1" name="pay_opt" value="1" class='rdo'> <span class="rdo_ment">카드결제</span></label> &nbsp;
+		  <label for="pay_opt4" class="hand fleft" style="width:100px"><input type="radio" id="pay_opt4" name="pay_opt" value="4" class='rdo'> <span class="rdo_ment">가상계좌</span></label> &nbsp;
+		  <label for="pay_opt1" class="hand fleft" style="width:100px"><input type="radio" id="pay_opt1" name="pay_opt" value="1" class='rdo'> <span class="rdo_ment">카드결제</span></label> &nbsp;
+		  <label for="pay_opt2" class="hand fleft" style="width:100px"><input type="radio" id="pay_opt2" name="pay_opt" value="2" class='rdo'> <span class="rdo_ment">통장입금</span></label> &nbsp;
 			<? if(!$mobile_agent) : ?>
 			<label for="pay_opt3" class="hand fleft"><input type="radio" id="pay_opt3" name="pay_opt" value="3"  class='rdo'> <span class="rdo_ment">실시간 계좌이체</span></label>(공인인증서 필수-법인계좌 사용불가)
 			<? endif; ?>
@@ -221,9 +201,14 @@ while($rs=$stmt->fetch())
 	<tr   height='40' name="row_bank">
 		<th>입금은행</th>
 		<td>
-		<? foreach($bank_arr as $k => $arr) : ?>
-			<label for="bank<?=$k?>" class="hand fleft" style="width:100px"><input type="radio" id="bank<?=$k?>" name="bank_code" value="<?=$k?>"<? if($k==10) echo " checked"; ?> class="rdo"> <span class="rdo_ment"><?=$arr[name]?></span></label> &nbsp;
-		<? endforeach; ?>
+		<?
+		  foreach($bank_arr as $k => $arr)
+		  {
+		    $bk_st=($k==10)? "checked" : "";
+		    echo "<label for='bank{$k}' class='hand fleft' style='width:100px'><input type='radio' id='bank{$k}' name='bank_code' value='{$k}' {$bk_st} class='rdo'><span class='rdo_ment'>{$arr[name]}</span></label> &nbsp;";
+		  }
+		?>
+		
 		</td>
 	</tr>
 	<tr  height='40' name="row_bank">
@@ -232,9 +217,7 @@ while($rs=$stmt->fetch())
 	</tr>
 </table>
 <br>
-<div class="center"><a href="javascript:pay2()"><span class="btn_box_ss btn_tank radius_10" style="width:130px">신청 및 결제하기(준형)</span></a></div>
-<div class="center"><a href="javascript:pay1()"><span class="btn_box_ss btn_tank radius_10" style="width:130px">신청 및 결제하기(성헌)</span></a></div>
-
+<div class="center"><a href="javascript:pay()"><span class="btn_box_ss btn_tank radius_10" style="width:130px">신청 및 결제하기</span></a></div>
 	<input type="hidden" id="amt" name="amt" value="0">
 	<input type="hidden" id="smp" name="smp" value="">
 	<input type="hidden" id="order_no" name="order_no" value="<?=$order_no?>">
@@ -242,16 +225,12 @@ while($rs=$stmt->fetch())
 	<input type="hidden" id="dc_rate" name="dc_rate" value="<?=$dc_rate?>">
 </form>
 <div id="bank_info">
-<?
-//계좌 안내
-bank_info();
-?>
+<!-- 계좌 안내 -->
+<? bank_info();?>
 </div>
 <div id="bank_info_mv" style="display:none">
-<?
-//동영상 계좌 안내
-bank_info_mv();
-?>
+<!-- //동영상 계좌 안내 -->
+<? bank_info_mv(); ?>
 </div>
 
 <?
@@ -264,36 +243,30 @@ include($_SERVER["DOCUMENT_ROOT"]."/inc/footer.php");
 var pj=<?=$price_json?>;
 var pj_lec=<?=$price_lec_json?>;
 
-$(document).ready(function(){	
-	$("#tbl_price_auct input:checkbox").click(function(){
-		calc(this);
-	});
-	$("#tbl_price_lect input:checkbox").click(function(){
-		calc_lect();
-	});
-	
-	$("input:radio[name=pay_opt]").click(function(){
-		(this.value==2) ? $("tr[name=row_bank]").show() : $("tr[name=row_bank]").hide();
-	});
-	
-	$("tr[name=row]").mouseover(function(){
-		$(this).css({"background":"#fff6d7"});
-	}).mouseout(function(){
-		$(this).css({"background":""});
-	});
+$(document).ready(function()
+{	
+	$("#tbl_price_auct input:checkbox").click(function(){calc(this);});
+	$("#tbl_price_lect input:checkbox").click(function(){calc_lect();});
+	$("input:radio[name=pay_opt]").click(function(){(this.value==2) ? $("tr[name=row_bank]").show() : $("tr[name=row_bank]").hide();});
+	$("tr[name=row]").mouseover(function(){$(this).css({"background":"#fff6d7"});}).mouseout(function(){$(this).css({"background":""});});
+  //결제방법 최초선택
+  $("#pay_opt4").prop("checked", true);
+  $("tr[name=row_bank]").hide();
 });
 
 function payform_ctrl(pay_code)
 {
 	if(pay_code==100)
-	{
+	{   
+    $("#tbl_price_lect input:checkbox:checked").prop("checked",false);
 		$("#tbl_price_lect").hide();
 		$("#tbl_price_auct").show();
 		//$("#bank_info").show();
 		//$("#bank_info_mv").hide();	
 	}
 	else if(pay_code==101)
-	{		
+	{	
+    $("#tbl_price_auct input:checkbox:checked").prop("checked",false).parent().removeClass("orange bold");	
 		$("#tbl_price_auct").hide();
 		$("#tbl_price_lect").show();
 		//$("#bank_info").hide();
@@ -333,7 +306,7 @@ function calc(obj)
 		}
 		else
 		{
-			$("#row_99 input:checkbox:checked").attr("checked",false);
+			$("#row_99 input:checkbox:checked").prop("checked",false);
 		}
 		
 		//권역선택시 제주 해제
@@ -439,69 +412,43 @@ function calc_lect()
 	}
 }
 
+//IE version
+var ieVersion=(function()
+{
+ var version=-1;
+ if(navigator.appName == 'Microsoft Internet Explorer' && navigator.userAgent.toLowerCase().indexOf('msie') != -1 && new RegExp('MSIE ([0-9]{1,}[\./0-9]{0,})').exec(navigator.userAgent) != null){version = parseInt(RegExp.$1);}
+ return version;
+});
+
 function pay()
 {
 	//결제창에서 뒤로가기시
-	if($("#area_info").text()=="선택전" && $("#amt").val() > 0)
-	{
-		location.reload();
-	}
+	if($("#area_info").text()=="선택전" && $("#amt").val() > 0){location.reload();}
+	if($("#amt").val()==0){	alert("선택한 항목이 없습니다.");	return;}
 	
-	if($("#amt").val()==0)
+	//가상계좌분기
+  if($("#pay_opt4").is(":checked") == true){$("#fm_pay").attr("action","_tospay_order.php");}
+	else
 	{
-		alert("선택한 항목이 없습니다.");
-		return;
-	}	
-	$("#fm_pay").submit();
-    
-}
-
-function pay1() //성헌
-{
-    $("#fm_pay").attr("action", "YPay_order.php");
-	//결제창에서 뒤로가기시
-	if($("#area_info").text()=="선택전" && $("#amt").val() > 0)
-	{
-		location.reload();
+	  if($("#pay_opt1").is(":checked") == true)
+	  {
+	    //IE10이하는 구모듈로 분기
+	    if(ieVersion !== -1 && ieVersion < 11){$("#fm_pay").attr("action","XPay_order.php");}
+	    else{$("#fm_pay").attr("action","_tospay_order.php");}
+	  }
 	}
-	
-	if($("#amt").val()==0)
-	{
-		alert("선택한 항목이 없습니다.");
-		return;
-	}	
 	$("#fm_pay").submit();
 }
-
-function pay2() //준형
-{
-    $("#fm_pay").attr("action", "ZPay_order.php");
-	//결제창에서 뒤로가기시
-	if($("#area_info").text()=="선택전" && $("#amt").val() > 0)
-	{
-		location.reload();
-	}
-	
-	if($("#amt").val()==0)
-	{
-		alert("선택한 항목이 없습니다.");
-		return;
-	}	
-	$("#fm_pay").submit();
-}
-
 
 <? if($ref=="aply_lect") : ?>
 	$("#pay_code_101").trigger("click");
-	$("#tbl_price_lect input:checkbox").each(function(){
+	$("#tbl_price_lect input:checkbox").each(function()
+	{
 		if(this.value==<?=$lec_cd?>)
 		{
 			var chkLec=this.id;
-			setTimeout(function(){
-				$("#"+chkLec).trigger("click");
-			},1000);
+			setTimeout(function(){$("#"+chkLec).trigger("click");},1000);
 		}
 	});
 <? endif; ?>
-
 </script>

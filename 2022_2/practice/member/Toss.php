@@ -115,18 +115,12 @@ class Toss
       global $my_db, $pdo, $flogFlag;
       if($status == 'DONE')
       { 
-        $USQL="UPDATE {$my_db}.tm_pay_log SET return_status = 'DONE' WHERE order_no= '{$order_no}' AND id = '{$client_id}'";
+        $USQL="UPDATE {$my_db}.tm_pay_log SET status='DONE' WHERE order_no='{$order_no}' AND id='{$client_id}'";
         $stmt=$pdo->prepare($USQL);
         $stmt->execute();
         //파일로그
         if($flogFlag==0){$this->fileLog("[Toss] > 경매(100) pay_log update > log 1",$USQL);}
         
-        $SQL="SELECT * FROM {$my_db}.tm_pay_log WHERE order_no='{$order_no}' AND id='{$client_id}'";
-        $stmt=$pdo->prepare($SQL);
-    		$stmt->execute();
-    		$res=$stmt->fetch();
-    		//파일로그
-        if($flogFlag==0){$this->fileLog("[Toss] > 경매(100) pay_log select > log 2",$SQL);}
         //DB 처리 - Begin
         $today=date("Y-m-d");
         $smp_arr=explode(",",$smp);
@@ -172,13 +166,14 @@ class Toss
                 }   break;
                 case 101 :
                 {    
-       
-                    $TSQL="SELECT * FROM {$my_db}.tm_pay_result WHERE id='{$client_id}' AND pay_code='{$pay_code}' AND state='{$state}' LIMIT 0,1";
-                    $stmt->execute($TSQL);
+                    $TSQL="SELECT * FROM {$my_db}.tm_pay_result WHERE id='{$client_id}' AND pay_code='{$pay_code}' AND sector='{$state}' LIMIT 0,1";
+                    $stmt=$pdo->prepare($TSQL);
+                    $stmt->execute();                                                                             
                     $rs=$stmt->fetch();
+                    if($flogFlag==0){$this->fileLog("[Toss] > 경매(101)  > 동영상 1",$TSQL);}
                     if($rs)
                     {
-                        $SQL ="INSERT INTO {$my_db}.tm_pay_history(order_no,id,pay_code,paykind,months,paydate,paytime,payname,bankcode,money,state,sector,validity,tempdate,startdate,staff,memo,1) ";
+                        $SQL ="INSERT INTO {$my_db}.tm_pay_history(order_no,id,pay_code,paykind,months,paydate,paytime,payname,bankcode,money,state,sector,validity,tempdate,startdate,staff,memo,toss) ";
                         $SQL.="VALUES('{$rs[order_no]}','{$rs[id]}','{$rs[pay_code]}','{$rs[paykind]}','{$rs[months]}','{$rs[paydate]}','{$rs[paytime]}','{$rs[payname]}','{$rs[bankcode]}','{$rs[money]}','{$rs[state]}',";
                         $SQL.="'{$rs[sector]}','{$rs[validity]}','{$rs[tempdate]}','{$rs[startdate]}','{$rs[staff]}','{$rs[memo]}',1)";
                         $stmt=$pdo->prepare($SQL);
@@ -205,8 +200,18 @@ class Toss
             }			
         } 
         
+        $SQL="SELECT * FROM {$my_db}.tm_pay_log WHERE order_no='{$order_no}' AND id='{$client_id}'";
+        $stmt=$pdo->prepare($SQL);
+    		$stmt->execute();
+    		$res=$stmt->fetch();
+    		$pay_price=$res['pay_price'];
+    		$dc_rate=$res['dc_rate'];
+    		
+    		//파일로그
+        if($flogFlag==0){$this->fileLog("[Toss] > 경매(100) pay_log select > log 2",$SQL);}
+        
         if(!$dc_flag) $dc_rate=0;
-        $ISQL="INSERT INTO {$my_db}.tm_pay_list(order_no,id,pay_price,dc_rate,wdate,toss) VALUES('{$order_no}','{$client_id}','{$res[amt]}','{$res[dc_rate]}',CURDATE(),1)";
+        $ISQL="INSERT INTO {$my_db}.tm_pay_list(order_no,id,pay_price,dc_rate,wdate,toss) VALUES('{$order_no}','{$client_id}','{$pay_price}','{$dc_rate}',CURDATE(),1)";
         $stmt=$pdo->prepare($ISQL);
    		  $stmt->execute();
 
@@ -323,32 +328,8 @@ class Toss
     ## 결제 > 은행(환불)
     public function arr_payBank($bank)
     {
-      $arr_payBank=array(
-      "경남" => "경남은행",
-      "광주" => "광주은행",
-      "국민" => "KB국민은행",
-      "기업" => "IBK기업은행",
-      "농협" => "NH농협은행",
-      "대구" => "DGB대구은행",
-      "부산" => "부산은행",
-      "산업" => "KDB산업은행",
-      "새마을" => "새마을금고",
-      "산림" => "산림조합",
-      "수협" => "Sh수협은행",
-      "신한" => "신한은행",
-      "신협" => "신협",
-      "씨티" => "씨티은행",
-      "우리" => "우리은행",
-      "우체국" => "우체국예금보험",
-      "저축" => "자축은행중앙회",
-      "전북" => "전북은행",
-      "제주" => "제주은행",
-      "카카오" => "카카오뱅크",
-      "케이" => "케이뱅크",
-      "토스" => "토스뱅크",
-      "하나" => "하나은행",
-      "SC제일" => "SC제일은행"
-      );
+      //$arr_payBank1=array("경남" => "경남은행","광주" => "광주은행","국민" => "KB국민은행","기업" => "IBK기업은행","농협" => "NH농협은행","대구" => "DGB대구은행","부산" => "부산은행","산업" => "KDB산업은행","새마을" => "새마을금고","산림" => "산림조합","수협" => "Sh수협은행","신한" => "신한은행","신협" => "신협","씨티" => "씨티은행","우리" => "우리은행","우체국" => "우체국예금보험","저축" => "저축은행중앙회","전북" => "전북은행","제주" => "제주은행","카카오" => "카카오뱅크", "케이" => "케이뱅크","토스" => "토스뱅크","하나" => "하나은행","SC제일" => "SC제일은행");
+      $arr_payBank=array("10" => "국민","11" => "국민(동)","2" => "산업","3" => "기업","7" => "수협","18" => "농협","20" => "우리","23" => "SC제일","27" => "씨티","31" => "대구","32" => "부산","34" => "광주","35" => "제주","37" => "전북","39" => "경남","45" => "새마을","48" => "신협","50" => "저축","64" => "산림","71" => "우체국","81" => "하나","88" => "신한","89" => "케이","90" => "카카오","92" => "토스");
       return  $arr_payBank[$bank];
     }
     ## 결제 > 결제유형
@@ -366,8 +347,15 @@ class Toss
     }
 
     ## 거래 정산 조회(하루 동안의 거래기록)
-    public function search_transaction($date){
-        return Toss::curl_get("https://api.tosspayments.com/v1/transactions?startDate=".$date."T00:00:00.0000&endDate=".$date."T23:59:59.999");
+    public function search_transaction($date)
+    {
+        return Toss::curl_get("https://api.tosspayments.com/v1/transactions?startDate={$date}T00:00:00.0000&endDate={$date}T23:59:59.999");
+    }
+
+    ## 결제 조회
+    public function search_payment($order_no)
+    {
+        return Toss::curl_get("https://api.tosspayments.com/v1/payments/orders/{$order_no}");
     }
 }
 
@@ -385,7 +373,7 @@ try
        {
          $toss=new Toss("test_ck_OEP59LybZ8BmOpKDwgJr6GYo7pRe","test_sk_OEP59LybZ8BmOwAwWakr6GYo7pRe");
        } else if ($client_id=="sweet123") {
-         $toss=new Toss("test_ck_OEP59LybZ8BmOpKDwgJr6GYo7pRe","test_sk_ODnyRpQWGrNG0mAaApe8Kwv1M9EN");
+         $toss=new Toss("test_ck_Z0RnYX2w532602zvA0g3NeyqApQE","test_sk_ODnyRpQWGrNG0mAaApe8Kwv1M9EN");
        }
        else
        {
@@ -400,4 +388,4 @@ catch(Exception $e)
     alertBack($msg);
     exit;
 }
-?>
+?> 
