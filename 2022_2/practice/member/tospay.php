@@ -190,10 +190,10 @@ while($rs=$stmt->fetch())
 		<td>
 		  <label for="pay_opt4" class="hand fleft" style="width:100px"><input type="radio" id="pay_opt4" name="pay_opt" value="4" class='rdo'> <span class="rdo_ment">가상계좌</span></label> &nbsp;
 		  <label for="pay_opt1" class="hand fleft" style="width:100px"><input type="radio" id="pay_opt1" name="pay_opt" value="1" class='rdo'> <span class="rdo_ment">카드결제</span></label> &nbsp;
-		  <label for="pay_opt2" class="hand fleft" style="width:100px"><input type="radio" id="pay_opt2" name="pay_opt" value="2" class='rdo'> <span class="rdo_ment">통장입금</span></label> &nbsp;
-			<? if(!$mobile_agent) : ?>
-			<label for="pay_opt3" class="hand fleft"><input type="radio" id="pay_opt3" name="pay_opt" value="3"  class='rdo'> <span class="rdo_ment">실시간 계좌이체</span></label>(공인인증서 필수-법인계좌 사용불가)
-			<? endif; ?>
+          <label for="pay_opt3" class="hand fleft" style="width:100px"><input type="radio" id="pay_opt3" name="pay_opt" value="3" class='rdo'> <span class="rdo_ment">계좌이체</span></label> &nbsp;
+          <!-- <? //if(!$mobile_agent) : ?>
+			<label for="pay_opt3" class="hand fleft"><input type="radio" id="pay_opt3" name="pay_opt" value="3"  class='rdo'> <span class="rdo_ment">계좌이체</span></label>(공인인증서 필수-법인계좌 사용불가)
+			<? //endif; ?> -->
 			<!--<br>
 			<span class="red">※ 현재 전자결제(카드결제/실시간 계좌이체)연동 테스트중 이므로, 통장입금 부탁드립니다.</span>-->
 		</td>
@@ -419,26 +419,23 @@ var ieVersion=(function()
  if(navigator.appName == 'Microsoft Internet Explorer' && navigator.userAgent.toLowerCase().indexOf('msie') != -1 && new RegExp('MSIE ([0-9]{1,}[\./0-9]{0,})').exec(navigator.userAgent) != null){version = parseInt(RegExp.$1);}
  return version;
 });
-
 function pay()
 {
+    $("#fm_pay").attr("action", "_tospay_order.php");
 	//결제창에서 뒤로가기시
-	if($("#area_info").text()=="선택전" && $("#amt").val() > 0){location.reload();}
-	if($("#amt").val()==0){	alert("선택한 항목이 없습니다.");	return;}
-	
-	//가상계좌분기
-  if($("#pay_opt4").is(":checked") == true){$("#fm_pay").attr("action","_tospay_order.php");}
-	else
+	if($("#area_info").text()=="선택전" && $("#amt").val() > 0)
 	{
-	  if($("#pay_opt1").is(":checked") == true)
-	  {
-	    //IE10이하는 구모듈로 분기
-	    if(ieVersion !== -1 && ieVersion < 11){$("#fm_pay").attr("action","XPay_order.php");}
-	    else{$("#fm_pay").attr("action","_tospay_order.php");}
-	  }
+		location.reload();
 	}
+	
+	if($("#amt").val()==0)
+	{
+		alert("선택한 항목이 없습니다.");
+		return;
+	}	
 	$("#fm_pay").submit();
 }
+
 
 <? if($ref=="aply_lect") : ?>
 	$("#pay_code_101").trigger("click");

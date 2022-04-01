@@ -1,5 +1,38 @@
 <?
-class Toss 
+interface Toss_
+{
+    ##curl-post
+    public function curl_post($url, $data);
+    ##curl-get
+    public function curl_get($url);
+    ##결제정보 일치여부 확인 =>할인정책 변경시 반드시 수정 필요
+    public function samePay($pay_code, $smp_arr, $amt, $dc_rate);
+    ##DB 
+    public function dbPay($status, $smp, $pay_code, $order_no, $pay_opt, $client_id);
+    ##결제취소
+    public function cancelPayment($paymentKey, $data); 
+    ##현금영수증 발행
+    public function issuePayment($data);
+    ##현금영수증 취소 
+    public function issueCancel($receiptKey, $data);
+    ## 결제 > QueryString
+    public function getServerQueryString($server,$info );
+    ## 결제 > 파일로그
+    public function fileLog($title,$data);
+    ## 결제 > 진행상태
+    public function arr_payStatus($status);
+    ## 결제 > 취소 환불
+    public function arr_payRefund($refund);
+    ## 결제 > 은행(환불)
+    public function arr_payBank($bank);
+    ## 결제 > 결제유형
+    public function arr_payKind($paykind);
+    ## 거래 정산 조회(하루 동안의 거래기록)
+    public function search_transaction($date);
+    ## 결제 조회
+    public function search_payment($order_no);
+}
+class Toss implements Toss_ 
 {   
     public function __construct($client, $secret)
     {   
@@ -55,7 +88,58 @@ class Toss
         curl_close($curl);
         return ['resData'=>json_decode($response,true), 'err'=>$err];
     }
+    ##자동결제 (빌링키 발급)
+    public function issued_billing($authKey, $data)
+    {
+        $curl = curl_init();
+        curl_setopt_array($curl,
+        [
+            CURLOPT_URL => "https://api.tosspayments.com/v1/billing/authorizations/{$authKey}",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => json_encode($data,JSON_UNESCAPED_UNICODE),
+            CURLOPT_HTTPHEADER => [
+                "Authorization: Basic " .$this->credential,
+                "Content-Type: application/json"
+            ]
+        ]);
+        $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $err = curl_error($curl);
+        curl_close($curl);
 
+        return['resCode'=>$httpCode, 'resData'=>json_decode($response,true), 'err'=>$err]; 
+    }
+
+    ##자동결제 (결제 승인요청)
+    public function curl_billing($billingKey, $data)
+    {
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+        CURLOPT_URL => "https://api.tosspayments.com/v1/billing/{$billingKey}",
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => "",
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => "POST",
+        CURLOPT_POSTFIELDS => json_encode($data,JSON_UNESCAPED_UNICODE),
+        CURLOPT_HTTPHEADER => [
+            "Authorization: Basic ".$this->credential,
+            "Content-Type: application/json"
+        ],
+        ]);
+        $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $err = curl_error($curl);
+        curl_close($curl);
+        return['resCode'=>$httpCode, 'resData'=>json_decode($response,true), 'err'=>$err]; 
+        
+    }
 
     ##결제정보 일치여부 확인
     public function samePay($pay_code, $smp_arr, $amt, $dc_rate)

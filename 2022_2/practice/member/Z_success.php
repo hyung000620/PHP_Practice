@@ -12,7 +12,7 @@ $mode=(int)$mode;
 $html=array();
 $remoteip=$_SERVER['REMOTE_ADDR']; 
  
-#결제 > 카드(1), 가상계좌(4)
+#결제 > 카드(1), 가상계좌(4), 계좌이체(3)
 if($mode==1 || $mode==4)
 {
   $paymentKey = $_GET['paymentKey'];
@@ -35,7 +35,7 @@ if($mode==1 || $mode==4)
   $toss->fileLog("[result] > {$mstr} > 1",json_encode($tossData,JSON_UNESCAPED_UNICODE));
   ###############################################################
   
-  #[공통]
+  # [공통]
   $tosspaymentKey=$tossData['paymentKey'];
   $orderId=$tossData['orderId'];
   #결제주문명
@@ -80,7 +80,15 @@ if($mode==1 || $mode==4)
   #파일로그
   if($flogFlag==0){$toss->fileLog("[result] > log 2", $SQL);}   
 }
-
+else if($mode == 6)
+{
+  $customerKey = $_GET['customerKey'];
+  $authKey = $_GET['authKey'];
+  $data=['customerKey'=>$customerKey];
+  $res=$toss->issued_billing($authKey, $data);
+  $tossData=$res['resData'];  
+  $code=$res['resCode'];
+}
 switch ($mode) 
 {
   case  1  :
@@ -134,6 +142,18 @@ switch ($mode)
       #결제오류
       failPay($code,$tossData['message']);
     }    
+  } break;
+  case 6 : 
+  {
+    if($code==200)
+    {
+      $billingKey=$tossData['billingKey'];
+      $data=[];
+    }
+    else
+    {
+      failPay($code,$tossData['message']);
+    }
   } break;
   case 4  :
   {
@@ -189,7 +209,7 @@ switch ($mode)
       $rrs=$stmt->fetch();
       #파일로그
       if($flogFlag==0){$toss->fileLog("[result] pay_wait select > log 41", $CSQL);}
-
+      
       $rtdata=json_decode($virtualAccount,true);
       if($rrs)
       {
@@ -212,7 +232,6 @@ switch ($mode)
          if($flogFlag==0){$toss->fileLog("[result] pay_wait insert > log 43", $ISQL);}
       }
       ### db > tm_pay_wait 
-                    
       #html
       $dueDate_=date("Y.m.d H:i:s", strtotime($dueDate));
       $html[]="- <span class='f18 bold'> 결제요청이 <span class='red'>완료</span> 되었습니다.<br></span><br>";

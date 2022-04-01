@@ -18,8 +18,13 @@
 
   #cd to str
   $paycd_gb=($pay_code==100)? "해당지역"  : "강사명";
-  $paycd_str=($pay_opt==1)? "카드" : "가상계좌";
-  
+  $paycd_str="";
+  switch($pay_opt)
+  {
+      case 1:{$paycd_str="카드";}break;
+      case 4:{$paycd_str="가상계좌";}break;
+      case 3:{$paycd_str="계좌이체";}break;
+  }
   #파일로그기록
   if($flogFlag==0)
   {
@@ -115,7 +120,6 @@ foreach($smp_arr as $v)
   <input type='hidden' name='dc_rate' id='dc_rate' value="<?=$dc_rate?>">
   <input type='hidden' name='log_data' id='log_data' value="<?=$log_data_fm?>">
 </form>
-
 <div class="center"><span class='btn_box_ss btn_tank radius_10'  id="payment-button">결제하기</span></div>
 
 <? include($_SERVER["DOCUMENT_ROOT"]."/inc/footer.php"); ?>
@@ -139,16 +143,14 @@ foreach($smp_arr as $v)
   		  if(success==1)
   		  { 		     
           let customerTaxType = "소득공제";      
-          let method = '<?=$paycd_str?>';    
+          let method = '<?=$paycd_str?>';
           if(method === "카드")
           {
-            let returnURL = "https://" + window.location.hostname + "/member/_tospay_result.php?mode=1";
-            tossPayments.requestPayment(method, 
+            let returnURL = "https://" + window.location.hostname + "/member/_tospay_result.php?mode=6";
+            tossPayments.requestBillingAuth(method, 
             {
-              amount: "<?=$amt?>",
-              orderId: "<?=$order_no?>",
-              orderName: "탱크옥션",
-              customerName: "<?=$client_name?>",
+              
+              customerKey: "<?=$order_no?>",
               successUrl: returnURL,
               failUrl: returnURL
             }).catch(function(error) {alert(error.message);});
@@ -156,7 +158,6 @@ foreach($smp_arr as $v)
           else if(method === "가상계좌")
           {
             let returnURL   = "https://" + window.location.hostname + "/member/_tospay_result.php?mode=4";   
-            let virtualURL   = "https://" + window.location.hostname + "/member/_tospay_result.php?mode=10";   
             tossPayments.requestPayment(method, 
             {
               amount: "<?=$amt?>",
@@ -167,8 +168,21 @@ foreach($smp_arr as $v)
               validHours: 1,
               cashReceipt: {type: customerTaxType},
               successUrl: returnURL,
-              failUrl: returnURL,
-              virtualAccountCallbackUrl: virtualURL
+              failUrl: returnURL
+            }).catch(function(error){alert(error.message);});          
+          }
+          else if(method === "계좌이체")
+          {
+            let returnURL   = "https://" + window.location.hostname + "/member/_tospay_result.php?mode=3";   
+            tossPayments.requestPayment(method, 
+            {
+              amount: "<?=$amt?>",
+              orderId: "<?=$order_no?>",
+              orderName: "탱크옥션",
+              useEscrow: false,
+              customerName: "<?=$client_name?>",
+              successUrl: returnURL,
+              failUrl: returnURL
             }).catch(function(error){alert(error.message);});          
           }  		    
   		  }
