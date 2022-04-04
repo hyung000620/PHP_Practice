@@ -82,10 +82,12 @@ if($mode==1 || $mode==4)
 }
 else if($mode == 6)
 {
+  ## 카드 등록 요청 > 빌링키 발급
   $customerKey = $_GET['customerKey'];
   $authKey = $_GET['authKey'];
+  $url="https://api.tosspayments.com/v1/billing/authorizations/{$authKey}";
   $data=['customerKey'=>$customerKey];
-  $res=$toss->issued_billing($authKey, $data);
+  $res=$toss->curl_post($url, $data);
   $tossData=$res['resData'];  
   $code=$res['resCode'];
 }
@@ -145,10 +147,56 @@ switch ($mode)
   } break;
   case 6 : 
   {
+    #자동결제 > 결과(결제완료)
     if($code==200)
     {
       $billingKey=$tossData['billingKey'];
-      $data=[];
+      $customerKey=$tossData['customerKey'];
+      $order_no=str_replace($client_id,'',$customerKey);
+
+      $SQL="SELECT * FROM {$my_db}.tm_pay_log WHERE order_no = '{$order_no}' AND id='{$client_id}'";
+      $stmt=$pdo->prepare($SQL);
+      $stmt->execute();
+      $rs=$stmt->fetch();
+      $pay_opt=$rs['pay_opt'];
+      $pay_code=$rs['pay_code'];
+      $name=$rs['name'];
+      $smp=$rs['smp'];
+      $bank_code=$rs['bank'];
+      $amount=$rs['pay_price'];
+      $dc_rate=$rs['dc_rate'];
+
+      $data=['customerKey'=>$customerKey, 'amount'=>$amount, 'orderId'=>$order_no];
+      $url="https://api.tosspayments.com/v1/billing/{$billingKey}";
+      $res=$toss->curl_post($url,$data);
+      $tossData=$res['resData'];  
+      $code=$res['resCode'];
+
+      $status=$tossData['status'];
+      $tosspaymentKey=$tossData['paymentKey'];
+      $requestedAt=$tossData['requestedAt'];
+
+      $USQL="UPDATE {$my_db}.tm_pay_log SET paymentkey='{$tosspaymentKey}', status='{$status}', mobile='{$mobilePhone}', receipt_type='카드매출전표', receipt_url='{$receiptUrl}', wdate='{$requestedAt}', order_ip='{$remoteip}', result_log='{$toss_data}' WHERE order_no='{$order_no}' AND id='{$client_id}'";
+      $stmt=$pdo->prepare($USQL);
+      $stmt->execute();
+
+      $USQL="UPDATE {$my_db}.tm_member SET billing_key='{$billingKey}', billing_month='{$month}', pay_custom=6 WHERE id='{$client_id}'";
+      $stmt=$pdo->prepare($USQL);
+      $stmt->execute();
+
+      #파일로그
+      if($flogFlag==0){$toss->fileLog("[result] 자동결제 > log 40", $USQL);}
+      
+      #db처리  
+      $toss->dbPay($status, $smp, $pay_code, $order_no, $pay_opt, $client_id); 
+     
+      #html
+      $html[]="<div class='center'><img src='/img/member/extend.png' alt='결제성공'></div>";
+      $html[]="<div style='padding:10px 20px 20px 20px'>";
+      $html[]=" <div style='color:#fff;font-size:14px;font-weight:bold;width:100%;text-align:center'>";
+      $html[]="   <span>결제영수증 (매출전표) &gt;</span>";
+      $html[]="   <span><a href='{$receiptUrl}' target='_blank'>새창으로 열기</a></span>";
+      $html[]="</div>";
     }
     else
     {
