@@ -1,9 +1,14 @@
 <?
+$dv=($_GET['dv'])?$_GET['dv']:"10";
+$page_code="50".$dv;
+
 include_once($_SERVER["DOCUMENT_ROOT"]."/inc/header.php");
-$page_code=($page_code)?$page_code:"5010";
-$board_id=($board_id)?$board_id:"notice1";
+$boardArr=array('10'=>'notice1','20'=>'notice2','30'=>'notice3','40'=>'notice4');
+$board_id=$boardArr[$dv];
+
 $start=(int)$start;
 $list_scale=(int)$list_scale;
+
 
 $page_scale=10;
 $start=($start) ? $start : 0;
@@ -21,11 +26,10 @@ $stmt->execute();
 $total_record=$stmt->rowCount();
 
 $html="";
-
 while($rs=$stmt->fetch())
 {
     $html.="<li style='border-top:1px solid #cccccc'>
-    <a href='/sam_board/board_50_view.php?board_id={$board_id}&page_code={$page_code}&idx={$rs['idx']}' style='padding:12px; display:block;'><span class='bold'style='font-size:15px'>{$rs['title']}</span></br>
+    <a href='/sam_board/board_50_view.php?board_id={$board_id}&page_code={$page_code}&idx={$rs['idx']}' onclick='' style='padding:12px; display:block;'><span class='bold'style='font-size:15px'>{$rs['title']}</span></br>
     <span>{$rs['wdate']}<span></a></li>";
 }
 if($total_record==0)
@@ -43,7 +47,6 @@ for($i=1; $i<=$total_page;$i++){
     $paging.="style='border:1px solid #cccccc; width: 30px; height:30px; line-height:28px; font-size:12px; display:inline-block;' >{$i}</span>";
 }
 
-
 ?>
 
 <!-------------------- HTML 영역 -------------------------------------------------------------------------------->
@@ -51,10 +54,10 @@ for($i=1; $i<=$total_page;$i++){
 <div class='wrap'>
 	<div class='li_teb'>
 		<ul class='ul_teb'>
-			<li value='5010' name='notice1' <?if($board_id=='notice1'){echo"class='on'";}?>>결산안내</li>
-            <li value='5020' name='notice2' <?if($board_id=='notice2'){echo"class='on'";}?>>연간기부금</li>
-            <li value='5030' name='notice3' <?if($board_id=='notice3'){echo"class='on'";}?>>활용실적</li>
-            <li value='5040' name='notice4' <?if($board_id=='notice4'){echo"class='on'";}?>>후원금내용</li>
+			<li name="10" <?if($dv==10){echo "class='on'";}?> >결산안내</li>
+            <li name="20" <?if($dv==20){echo "class='on'";}?> >연간기부금</li>
+            <li name="30" <?if($dv==30){echo "class='on'";}?> >활용실적</li>
+            <li name="40" <?if($dv==40){echo "class='on'";}?> >후원금내용</li>
 		</ul>
 	</div>
 	<div class='clear'></div>
@@ -85,7 +88,6 @@ for($i=1; $i<=$total_page;$i++){
             ?>
         </div>
     </div>
-    
 </div>
 <? include_once($_SERVER["DOCUMENT_ROOT"]."/inc/footer.php");?>
 <!---------------------------------------------------------------------------------------------------------------->
@@ -113,11 +115,11 @@ function ulTebClk()
 {
     $('.ul_teb >li').click(function(){
         $('.ul_teb li').removeClass('on');
-        let board = $(this).attr('name');
-        let code = $(this).attr('value');
-        window.location = '<?=$PHP_SELF;?>?board_id='+board+'&page_code='+code+'&page=1';
+        let dv = $(this).attr('name');
+        window.location = '<?=$PHP_SELF;?>?dv='+dv;
     })
 }
+
 
 function pagingNavi()
 {
