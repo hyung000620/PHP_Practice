@@ -9,5 +9,5 @@
 </main>
 <?
     include_once($_SERVER["DOCUMENT_ROOT"]."/practice/inc/footer.php");
-
+    
 ?>
