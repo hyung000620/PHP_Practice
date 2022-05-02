@@ -98,7 +98,7 @@ while($rs=$stmt->fetch())
         </div>
     </div>
 </div>
-
+//이것도 안되면 진짜 뭐지
 <?
 include_once($_SERVER["DOCUMENT_ROOT"]."/inc/footer.php");
 ?>
