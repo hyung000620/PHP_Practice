@@ -102,10 +102,34 @@ switch((int)$mode)
         location.href='/member/cert.php?mode=logout';
         </script>";
     }break;
+    //마이페이지
+    case 6 :
+    {
+        $dataArr['site_name']=$_site_name;
+    }break;
+    //회원 정보 수정
+    case 10 :
+    {
+        $SQL="SELECT * FROM {$my_db}.tm_member WHERE id='{$user_id}'";
+        $stmt=$pdo->prepare($SQL);
+        $stmt->execute();
+        $dataArr['item']=array('010','011','016','017','018','019');
+        $rs=$stmt->fetch();
+        list($phone1,$phone2,$phone3)=explode("-",$rs['mobile']);
+        $dataArr['phone1']=$phone1;
+        $dataArr['phone2']=$phone2;
+        $dataArr['phone3']=$phone3;
+        $dataArr['id']=$rs['id'];
+        $dataArr['name']=$rs['name'];
+        $dataArr['email']=$rs['email'];
+        $dataArr['r_mail']=$rs['r_mail'];
+        $dataArr['sms']=$rs['sms'];
+
+    }break;
     //결제 내역
     case 20 :
     {
-        $SQL="SELECT * FROM {$my_db}.tm_pay_list WHERE id='{$user_id}'";
+        $SQL="SELECT * FROM {$my_db}.tm_pay_list WHERE id='{$user_id}' ORDER BY wdate DESC;";
         $stmt=$pdo->prepare($SQL);
         $stmt->execute();
         $total_record=$stmt->rowCount();
