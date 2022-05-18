@@ -5,13 +5,14 @@ include_once($_SERVER["DOCUMENT_ROOT"]."/inc/header.php");
 <!--  -->
 <link rel="stylesheet" href="./css/cal.css?ver=<?=$_ver?>">
 <div class='clear'></div>
-<div style='display:flex; gap:15px'>
+<div id='edu_navi' style='display:flex; gap:15px'>
     <div class='eduSch' style='cursor:pointer;'>교육 일정</div>
     <div class='eduApp' style='cursor:pointer;'>교육 신청</div>
 </div>
 <div id='cal'></div>
 <form id='calFrm'>
     <input type='hidden' name='mode' id='mode' value='1'>
+    <input type='hidden' name='idx' id='idx' value=''>
 </form>
 <!--  -->
 <? include_once($_SERVER["DOCUMENT_ROOT"]."/inc/footer.php"); ?>
@@ -25,6 +26,7 @@ $(function() {
 //calendar
 function calendarInit() 
 {
+    $('#mode').val(1);
     let wrap = [];
     wrap.push("<div class=\"sec_cal\">");
     wrap.push("<div class=\"cal_nav\">")
@@ -58,7 +60,8 @@ function calendarInit()
     // 캘린더 렌더링
     renderCalender(thisMonth);
 
-    function renderCalender(thisMonth) {
+    function renderCalender(thisMonth) 
+    {
         let calendar = [];
         $.ajax(
         {
@@ -143,8 +146,7 @@ function calendarInit()
 function boardInit()
 {
     let wrap = [];
-    wrap.push("<div class='sec_cal'><table class='sec_tbl'><tbody>");
-    wrap.push("<tr><th>구분</th><th>교육명</th><th>교육장</th><th>시작일시</th><th>종료일시</th><th>상태</th></tr>");
+    $('#mode').val(1);
     $.ajax(
     {
         type: "POST",
@@ -152,19 +154,52 @@ function boardInit()
         data:$('#calFrm').serialize(),
         dataType: 'JSON',
         success:function(data){
+            wrap.push("<div class='sec_cal'><table class='sec_tbl'><tbody>");
+            wrap.push("<tr><th>구분</th><th>교육명</th><th>교육장</th><th>시작일시</th><th>종료일시</th>");
+            wrap.push("<th>상태<select><option>전체</option><option>진행중</option><option>마감</option><option>모집중</option></select></th></tr>");
             $.each(data.item, function(){
-                wrap.push("<tr>");
-                wrap.push("<td>구분</td>");
-                wrap.push("<td>"+this.edu_title+"</td>");
-                wrap.push("<td>교육장</td>");
-                wrap.push("<td>"+this.sdate+"</td>");
-                wrap.push("<td>"+this.edate+"</td>");
-                wrap.push("<td>상태</td>");
-                wrap.push("</tr>");
-            })
-            wrap.push("</tbody></table></div>");
-            $('#cal').html(wrap.join(""));
-        }
+            wrap.push("<tr onclick='boardView("+this.idx+")'>");
+            wrap.push("<td>정기</td>");
+            wrap.push("<td>"+this.edu_title+"</td>");
+            wrap.push("<td>"+this.edu_addr+"</td>");
+            wrap.push("<td>"+this.sdate+"</td>");
+            wrap.push("<td>"+this.edate+"</td>");
+            wrap.push("<td>"+this.state+"</td>");
+            wrap.push("</tr>");
+        })
+        wrap.push("</tbody></table></div>");
+        $('#cal').html(wrap.join(""));
+    }
     })
+}
+
+function boardView(idx)
+{
+    let arr_list=[];
+    $('#mode').val(2);
+    $('#idx').val(idx);
+    $.ajax(
+    {
+        type: "POST",
+        url: "./ajax.php",
+        data: $('#calFrm').serialize(),
+        dataType: "JSON",
+        success:function(data)
+        {
+            if(typeof data != 'undefined')
+            {
+                //$('#edu_navi').css('display','none');
+                arr_list.push("<div><img src='https://www.tankauction.com/lecture/off_line/photo/"+data.photo_edu+"'></div>");
+                arr_list.push("<div class='center'><span onclick='edu_pay()' class='btn_box_ss btn_tank radius_10' style='width:250px'>다음</span></div>")
+                console.log(data);
+                $('#cal').html(arr_list.join(""));
+            }
+        }
+    });
+}
+
+function edu_pay()
+{
+    alert('로그인이 필요한 서비스입니다.');
 }
 </script>  
