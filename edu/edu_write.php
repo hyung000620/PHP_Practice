@@ -21,9 +21,8 @@ $tArr=array();
 $stmt->execute();
 while($rs=$stmt->fetch())
 {
-	array_push($tArr,$rs['nickname']);
+	$tArr[$rs['idx']]=$rs['nickname']."|".$rs['teacher_id'];
 }
-
 if($idx)
 {
 	//$result=sql_query("SELECT * FROM {$my_db}.tl_edu WHERE idx='{$idx}' LIMIT 0,1");
@@ -46,19 +45,22 @@ else
 .sec_cal .cal_nav .year-month {width: 200px;text-align: center;line-height: 1;}
 .sec_cal .cal_nav .nav {display: flex;border: 1px solid #333333;border-radius: 5px;}
 .sec_cal .cal_nav .go-prev,.sec_cal .cal_nav .go-next {display: block;width: 50px;height: 78px;font-size: 0;display: flex;justify-content: center;align-items: center;}
-.sec_cal .cal_nav .go-prev::before,.sec_cal .cal_nav .go-next::before {content: "";display: block;width: 20px;height: 20px;border: 3px solid #000;border-width: 3px 3px 0 0;transition: border 0.1s;}
+.sec_cal .cal_nav .go-prev::before,.sec_cal .cal_nav .go-next::before {content: "";display: block;width: 10px;height: 10px;border: 3px solid #000;border-width: 3px 3px 0 0;transition: border 0.1s;}
 .sec_cal .cal_nav .go-prev:hover::before,.sec_cal .cal_nav .go-next:hover::before {border-color: #ed2a61;}
 .sec_cal .cal_nav .go-prev::before {transform: rotate(-135deg);}
 .sec_cal .cal_nav .go-next::before {transform: rotate(45deg);}
-.sec_cal .cal_wrap {padding-top: 40px;position: relative;margin: 0 auto;}
+.sec_cal .cal_wrap {padding-top: 20px;position: relative;margin: 0 auto;}
 .sec_cal .cal_wrap .days {display: flex;margin-bottom: 20px;padding-bottom: 20px;border-bottom: 1px solid #ddd;}
 .sec_cal .cal_wrap::after {top: 368px;}
-.sec_cal .cal_wrap .day {display:flex;align-items: center;justify-content: center;width: calc(100% / 7);text-align: left;color: #999;font-size: 12px;text-align: center;border-radius:5px}
-.current.today {background: rgb(242 242 242);}
-.sec_cal .cal_wrap .dates {display: flex;flex-flow: wrap;height: 290px;}
+.sec_cal .cal_wrap .day {display:flex;align-items: center;justify-content: center;width: calc(100% / 7);text-align: left;color: #999;font-size: 12px;text-align: center;border-radius:5px;}
+.current.select {background: rgb(242 242 242);}
+.current.today {background: #ed2a61; opacity: 0.4;}
+.sec_cal .cal_wrap .dates {display: flex;flex-flow: wrap;height: 290px; cursor: pointer; gap: 5px 0;}
 .sec_cal .cal_wrap .day:nth-child(7n) {color: #3c6ffa;}
 .sec_cal .cal_wrap .day:nth-child(7n-6) {color: #ed2a61;}
-.sec_cal .cal_wrap .day.disable {color: #ddd;}
+.sec_cal .cal_wrap .day.disable {color: #ddd; cursor: default;}
+.sec_cal .cal_wrap .day.bold {font-weight: bold;}
+
 </style>
 <form name="fm" id="fm" action="edu_db.php" method="post" enctype="multipart/form-data">
 <div class="center bold f18" style='padding:10px'>오프라인 교육 <?=$mode_ment?></div>
@@ -81,20 +83,27 @@ else
 		<th>강사명</th>
 		<td><input type="text" id="edu_teacher" name="edu_teacher" value="<?=$rs[edu_teacher]?>" class="tx300">
 		&nbsp;&nbsp; 기존 강사
-		<select id='sel_teacher'>
+		<select id='sel_teacher' name='sel_teacher'>
 			<?
 				$html="";
 				$html.="<option value='0'>-선택-</option>";
 				foreach($tArr as $v){
+                    list($name,$tid)=explode("|",$v);
 					$html.= "<option value='{$v}'";
-					if($idx && $v == $rs[edu_teacher]){$html.="selected";}
-					$html.= ">{$v}</option>";
+					if($idx && $name == $rs[edu_teacher]){$html.="selected";}
+					$html.= ">{$name}</option>";
 				}
 				echo $html;
 			?>
 			</select>
 		</td>
 	</tr>
+    <tr>
+        <th>강의ID</th>
+        <td>
+            <input type='text' id='edu_id' name='edu_id' class='tx300' value='<?=$rs['edu_id']?>'>
+        </td>
+    </tr>
 	<tr>
 		<th>표시 여부</th>
 		<td>
@@ -116,11 +125,15 @@ else
 	<tr>
 		<th>모집/마감</th>
 		<td>
-			<input type="radio" name="receipt" value="0"<? if($rs[receipt]==0) echo " checked"; ?>>마감
+            <input type="radio" name="state" value="0"<? if($rs[receipt]==0) echo " checked"; ?>>자동
 			&nbsp;&nbsp;
-			<input type="radio" name="receipt" value="1"<? if($rs[receipt]==1) echo " checked"; ?>>모집중
+			<input type="radio" name="state" value="1"<? if($rs[receipt]==1) echo " checked"; ?>>마감
 			&nbsp;&nbsp;
-			<input type="radio" name="receipt" value="2"<? if($rs[receipt]==2) echo " checked"; ?>>진행중
+			<input type="radio" name="state" value="2"<? if($rs[receipt]==2) echo " checked"; ?>>오프라인 마감
+			&nbsp;&nbsp;
+			<input type="radio" name="state" value="3"<? if($rs[receipt]==3) echo " checked"; ?>>모집중
+            &nbsp;&nbsp;
+            <input type="radio" name="state" value="4"<? if($rs[receipt]==4) echo " checked"; ?>>진행중
 		</td>
 	</tr>
 	<tr>
@@ -137,7 +150,7 @@ else
 	<tr>
 		<th>접수 일자</th>
 		<td>
-			<input type="text" name="rdate" id="rdate" class="tx_date" autocomplete='off'>
+			<input type="text" name="rdate" id="rdate" value='<?=$rs[rdate]?>' class="tx_date" autocomplete='off'>
 		</td>
 	</tr>
 	<tr>
@@ -165,7 +178,7 @@ else
 	<tr>
 		<th>강좌 요일</th>
 		<td>
-			<input type="text" id="open_date" name="open_date" value="<?=$rs[open_date]?>" class="tx500" disabled>
+			<input type="text" id="open_date" name="open_date" value="<?=$rs[open_date]?>" class="tx500" readonly>
 			<div id='cal'></div>
 		</td>
 	</tr>
@@ -275,30 +288,31 @@ include($_SERVER["DOCUMENT_ROOT"]."/SuperAdmin/common/footer.php");
 <script type="text/javascript">
 $(document).ready(function(){
 	calendarInit();
-	$("#sdate,#edate,#rdate").datepicker({
-		changeMonth:true,
-		changeYear:true,
-		showButtonPanel:true
-	});	
-	$("#btnSubmit").click(function(){
-		fm_check();
-	});
+	$("#sdate,#edate,#rdate").datepicker({changeMonth:true,changeYear:true,showButtonPanel:true});	
+	$("#btnSubmit").click(function(){fm_check();});
 	$('#sel_teacher').on('change', function(){
-		let t_val = $('#sel_teacher').val();
-		$('#edu_teacher').val((t_val==0)?"":t_val);
+        $.ajax(
+        {
+            type: "POST",
+            url:"/SuperAdmin/xml/edu_write.php",
+            data:$('#fm').serialize(),
+            dataType: 'JSON',
+            success: function(data){
+                $('#edu_id').val(data.edu_id);
+                let t_val = $('#sel_teacher').val().split("|")[0];
+                if(t_val==0){$('#edu_teacher').val("");$('#edu_id').removeAttr('readonly');$('#edu_teacher').removeAttr('readonly');}
+                else{$('#edu_teacher').val(t_val);$('#edu_id').attr('readonly',true);$('#edu_teacher').attr('readonly',true);}
+            }
+        });
 	});
+	$('#edate, #sdate').on('change', function(){calendarInit();});
 });
 function link_view()
 {
 	var link_url="";
 	link_url=$("#edu_addr").val();
-	
 	if(link_url=="")
-	{
-		alert("링크 주소를 입력 해 주세요.");
-		return;
-	}
-	
+	{alert("링크 주소를 입력 해 주세요.");return;}
 	window.open("http://map.daum.net/?q="+link_url);
 }
 
@@ -308,10 +322,7 @@ function link_view2()
 	link_view2=$("#link").val();
 	
 	if(link_view2=="")
-	{
-		alert("링크 주소를 입력 해 주세요.");
-		return;
-	}
+{alert("링크 주소를 입력 해 주세요.");return;}
 	
 	window.open(link_view2);
 }
@@ -349,85 +360,59 @@ function calendarInit()
     let kstGap = 9 * 60 * 60 * 1000; // 한국 kst 기준시간 더하기
     let today = new Date(utc + kstGap); // 한국 시간으로 date 객체 만들기(오늘)
 	let thisMonth;
+	
 	if($('#sdate').val()==""){thisMonth= new Date(today.getFullYear(), today.getMonth(), today.getDate());}
 	else{thisMonth= new Date($('#sdate').val());}
 	
-    // 달력에서 표기하는 날짜 객체
-	
+    //설정한 기간
+	let sdateYear = parseInt($('#sdate').val().split('-')[0]);
+    let sdateMonth = parseInt($('#sdate').val().split('-')[1]);
+    let sdateDate = parseInt($('#sdate').val().split('-')[2]);
+    let sdate = new Date(sdateYear, sdateMonth, sdateDate);
     
+    let edateYear = parseInt($('#edate').val().split('-')[0]);
+    let edateMonth = parseInt($('#edate').val().split('-')[1]);
+    let edateDate = parseInt($('#edate').val().split('-')[2]);
+    let edate = new Date(edateYear, edateMonth, edateDate);
+    // 달력에서 표기하는 날짜 객체
     let currentYear = thisMonth.getFullYear(); // 달력에서 표기하는 연
     let currentMonth = thisMonth.getMonth(); // 달력에서 표기하는 월
     let currentDate = thisMonth.getDate(); // 달력에서 표기하는 일
 	let urlParams = new URLSearchParams(window.location.search); //현재 url params
-	if(urlParams.has('idx')){renderCalender_ajax(thisMonth);}
-	else{renderCalender(thisMonth);}
-	
-	
-    function renderCalender(thisMonth) 
+	if(urlParams.has('idx')){renderCalender_ajax(thisMonth,sdate,edate);}
+	else{renderCalender(thisMonth,sdate,edate);}
+
+	//등록
+    function renderCalender(thisMonth,sdate,edate) 
     {
 		let calendar = [];
-		
 		// 렌더링을 위한 데이터 정리
 		currentYear = thisMonth.getFullYear();
 		currentMonth = thisMonth.getMonth();
 		currentDate = thisMonth.getDate();
 		
-		// 이전 달의 마지막 날 날짜와 요일 구하기
-		let startDay = new Date(currentYear, currentMonth, 0);
-		let prevDate = startDay.getDate();
-		let prevDay = startDay.getDay();
+		makeCalendar(currentYear, currentMonth,calendar,sdate,edate);
 		
-		// 이번 달의 마지막날 날짜와 요일 구하기
-		let endDay = new Date(currentYear, currentMonth + 1, 0);
-		let nextDate = endDay.getDate();
-		let nextDay = endDay.getDay();
-		
-		//console.log(prevDate, prevDay, nextDate, nextDay);
-		// 현재 월 표기
-		$('.year-month').text(currentYear + '.' + (currentMonth + 1));
-		
-		// 렌더링 html 요소 생성
-		// 지난달
-		for (let i = prevDate - prevDay; i <= prevDate; i++) {
-			calendar.push("<div class=\"day prev disable\">" + i + "</div>");
-		}
-		// 이번달
-		if(prevDay == 6){calendar=[];}
-		for (let i = 1; i <= nextDate; i++) {
-			calendar.push("<div class=\"day current\">" + i + "</div>");
-		}
-		// 다음달
-		for (let i = 1; i <= (7 - nextDay == 7 ? 6 : 6 - nextDay); i++) {
-			calendar.push("<div class=\"day next disable\">" + i + "</div>")
-		}
-			
-		$('.dates').html(calendar.join(""));
-
-
 		$('.dates .current').click(function(){
+			if($('#sdate').val()==""){alert("시작 일자를 입력해주세요."); return;}
+			if($('#edate').val()==""){alert("종료 일자를 입력해주세요."); return;}
 			let mon = currentMonth+1;
 			let day = $(this).text();
-			if(mon<10){mon="0"+mon;}
+            let cday = new Date(currentYear,mon,day);
+            if(cday<sdate || cday>edate){alert('일정에서 벗어났습니다. 다시 시도해주세요.'); return;}
+			
+            if(mon<10){mon="0"+mon;}
 			if(day<10){day="0"+day;}
 			let val = currentYear+"-"+mon+"-"+day;
-			if($(this).hasClass('today')){
-				$(this).removeClass('today');
-				for(let i=0; i< arr_day.length; i++){
-					if(arr_day[i]== val){
-						arr_day.splice(i, 1);
-						i--;
-					}
-				}
-			}else{
-				arr_day.push(val);
-				$(this).addClass('today');
-			}
+			if($(this).hasClass('today')){$(this).removeClass('today');for(let i=0; i< arr_day.length; i++){if(arr_day[i]== val){arr_day.splice(i, 1);i--;}}}
+            else{arr_day.push(val);$(this).addClass('today');}
 			$('#open_date').val(arr_day.join("|"));
+            
 		});
 		
     }
-
-	function renderCalender_ajax(thisMonth)
+    //수정
+	function renderCalender_ajax(thisMonth,sdate,edate)
 	{
 		let calendar = [];
 		$.ajax(
@@ -436,43 +421,13 @@ function calendarInit()
 			url: "/SuperAdmin/xml/edu_write.php",
 			data: $('#fm').serialize(),
 			dataType: "JSON",
-			success:function(data){
-				console.log(data);
+			success:function(data){		
 				currentYear = thisMonth.getFullYear();
 				currentMonth = thisMonth.getMonth();
 				currentDate = thisMonth.getDate();
-				
-				let startDay = new Date(currentYear, currentMonth, 0);
-				let prevDate = startDay.getDate();
-				let prevDay = startDay.getDay();
-				
-				let endDay = new Date(currentYear, currentMonth + 1, 0);
-				let nextDate = endDay.getDate();
-				let nextDay = endDay.getDay();
-				
-				$('.year-month').text(currentYear + '.' + (currentMonth + 1));
-				for (let i = prevDate - prevDay; i <= prevDate; i++) {
-					calendar.push("<div class=\"day prev disable\">" + i + "</div>");
-				}
-
-				if(prevDay == 6){calendar=[];}
-				for (let i = 1; i <= nextDate; i++) {
-					calendar.push("<div class=\"day current\">" + i + "</div>");
-				}
-
-				for (let i = 1; i <= (7 - nextDay == 7 ? 6 : 6 - nextDay); i++) {
-					calendar.push("<div class=\"day next disable\">" + i + "</div>")
-				}
-					
-				$('.dates').html(calendar.join(""));
-				
+                makeCalendar(currentYear, currentMonth,calendar,sdate,edate);
 				$.each(data.open_date, function(idx,val){
-					for(let i=0; i< arr_day.length; i++){
-						if(arr_day[i]== val){
-							arr_day.splice(i, 1);
-							i--;
-						}
-					}
+					for(let i=0; i< arr_day.length; i++){if(arr_day[i]== val){arr_day.splice(i, 1);i--;}}
 					arr_day.push(val);
 				});
 
@@ -482,18 +437,8 @@ function calendarInit()
 					if(mon<10){mon="0"+mon;}
 					if(day<10){day="0"+day;}
 					let val = currentYear+"-"+mon+"-"+day;
-					if($(this).hasClass('today')){
-						$(this).removeClass('today');
-						for(let i=0; i< arr_day.length; i++){
-							if(arr_day[i]== val){
-								arr_day.splice(i, 1);
-								i--;
-							}
-						}
-					}else{
-						arr_day.push(val);
-						$(this).addClass('today');
-					}
+					if($(this).hasClass('today')){$(this).removeClass('today');for(let i=0; i< arr_day.length; i++){if(arr_day[i]== val){arr_day.splice(i, 1);i--;}}}
+                    else{arr_day.push(val);$(this).addClass('today');}
 					$('#open_date').val(arr_day.join("|"));
 				});
 
@@ -506,21 +451,25 @@ function calendarInit()
     // 이전달로 이동
     $('.go-prev').on('click', function() {
 		thisMonth = new Date(currentYear, currentMonth - 1, 1);
-        if(urlParams.has('idx')){renderCalender_ajax(thisMonth);}
-		else{renderCalender(thisMonth);}
+        if(sdate.getMonth()==(currentMonth+1)){alert('설정하신 일정에서 벗어났습니다. 다시 시도해주세요'); return;}
+        if(urlParams.has('idx')){renderCalender_ajax(thisMonth,sdate,edate);}
+		else{renderCalender(thisMonth,sdate,edate);}
 		reloadCalendar();
     });
 	
     // 다음달로 이동
     $('.go-next').on('click', function() {
 		thisMonth = new Date(currentYear, currentMonth + 1, 1);
-        if(urlParams.has('idx')){renderCalender_ajax(thisMonth);}
-		else{renderCalender(thisMonth);}
+        if(edate.getMonth()==thisMonth.getMonth()){alert('설정하신 일정에서 벗어났습니다. 다시 시도해주세요'); return;}
+        if(urlParams.has('idx')){renderCalender_ajax(thisMonth,sdate,edate);}
+		else{renderCalender(thisMonth,sdate,edate);}
 		reloadCalendar();
     });
 	
+    //데이터에 해당되는 달력에 마킹
 	function reloadCalendar()
 	{
+        arr_day = $('#open_date').val().split("|");
 		$.each(arr_day, function(idx, val){
 			let d = new Date(val);
 			if(d.getMonth()==currentMonth && d.getFullYear() == currentYear)
@@ -528,8 +477,66 @@ function calendarInit()
 				$(`.dates .current:eq(${d.getDate() -1})`).addClass("today");
 			}
 		});
+        //오늘 날짜 표기
+        if (today.getMonth() == currentMonth) {
+            $(`.dates .current:eq(${today.getDate() -1})`).addClass('select');
+        }
 	}
-}
 
+    //기본 달력 불러오기
+    function makeCalendar(currentYear, currentMonth,calendar,sdate, edate)
+    {
+        //이전 달의 마지막 날 날자와 요일 구하기
+        let startDay = new Date(currentYear, currentMonth, 0);
+        let prevDate = startDay.getDate();
+        let prevDay = startDay.getDay();
+        //이번 달의 마지막 날 날짜와 요일 구하기
+        let endDay = new Date(currentYear, currentMonth + 1, 0);
+        let nextDate = endDay.getDate();
+        let nextDay = endDay.getDay();
+        //현재 월 표기
+        $('.year-month').text(currentYear + '.' + (currentMonth + 1));
+        //렌더링 html 요소 생성
+        //지난달
+        for (let i = prevDate - prevDay; i <= prevDate; i++) {
+            calendar.push("<div class=\"day prev disable\">" + i + "</div>");
+        }
+        //이번달
+        if(prevDay == 6){calendar=[];}
+        for (let i = 1; i <= nextDate; i++) {
+            calendar.push("<div class=\"day current disable\">" + i + "</div>");
+        }
+        //다음달
+        for (let i = 1; i <= (7 - nextDay == 7 ? 6 : 6 - nextDay); i++) {
+            calendar.push("<div class=\"day next disable\">" + i + "</div>")
+        }
+            
+        $('.dates').html(calendar.join(""));
+        //오늘 날짜 표기
+        if (today.getMonth() == currentMonth) {
+            $(`.dates .current:eq(${today.getDate() -1})`).addClass('select');
+        }
+        // if(!isNaN(sdate.getMonth()))
+        // {
+        //     $('.dates .current').each(function(){
+        //     if(sdate.getMonth()==currentMonth && sdate.getDate()==$(this).text()){
+        //          $(this).removeClass('disable');
+        //          console.log($(this));
+        //     }
+        //     });
+        // }
+        // $('#sdate').on('change', function(){
+            
+        // });
+
+    }
+    // $('.dates .current').each(function(){
+    // if(sdate.getMonth()==currentMonth && sdate.getDate()==$(this).text()){
+    //         $(this).removeClass('disable');
+    //         console.log($(this));
+    // }
+    // });
+
+}
 </script>
 
