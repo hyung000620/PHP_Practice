@@ -52,13 +52,14 @@ else
 .sec_cal .cal_wrap {padding-top: 20px;position: relative;margin: 0 auto;}
 .sec_cal .cal_wrap .days {display: flex;margin-bottom: 20px;padding-bottom: 20px;border-bottom: 1px solid #ddd;}
 .sec_cal .cal_wrap::after {top: 368px;}
-.sec_cal .cal_wrap .day {display:flex;align-items: center;justify-content: center;width: calc(100% / 7);text-align: left;color: #999;font-size: 12px;text-align: center;border-radius:5px;}
+.sec_cal .cal_wrap .day {display:flex;align-items: center;justify-content: center;width: calc(100% / 7);text-align: left;color: #999;font-size: 12px;text-align: center;border-radius:5px;  cursor: pointer;}
 .current.select {background: rgb(242 242 242);}
-.current.today {background: #ed2a61; opacity: 0.4;}
-.sec_cal .cal_wrap .dates {display: flex;flex-flow: wrap;height: 290px; cursor: pointer; gap: 5px 0;}
+.current.today {background: yellow; opacity: 0.9;}
+.current.rdate {background: blue; opacity: 0.9;}
+.sec_cal .cal_wrap .dates {display: flex;flex-flow: wrap;height: 290px; gap: 5px 0;}
 .sec_cal .cal_wrap .day:nth-child(7n) {color: #3c6ffa;}
 .sec_cal .cal_wrap .day:nth-child(7n-6) {color: #ed2a61;}
-.sec_cal .cal_wrap .day.disable {color: #ddd; cursor: default;}
+.sec_cal .cal_wrap .day.disable {color: #ddd; cursor: default; pointer-events: none;}
 .sec_cal .cal_wrap .day.bold {font-weight: bold;}
 
 </style>
@@ -305,7 +306,7 @@ $(document).ready(function(){
             }
         });
 	});
-	$('#edate, #sdate').on('change', function(){calendarInit();});
+	$('#edate, #sdate, #rdate').on('change', function(){calendarInit();});
 });
 function link_view()
 {
@@ -340,6 +341,7 @@ function calendarInit()
 {
 	let arr_day = [];
     let wrap = [];
+	let arr_yoil=['일','월','화','수','목','금','토'];
     wrap.push("<div class=\"sec_cal\">");
     wrap.push("<div class=\"cal_nav\">")
     wrap.push("<a href=\"javascript:;\" class=\"nav-btn go-prev\"></a>");
@@ -365,15 +367,11 @@ function calendarInit()
 	else{thisMonth= new Date($('#sdate').val());}
 	
     //설정한 기간
-	let sdateYear = parseInt($('#sdate').val().split('-')[0]);
-    let sdateMonth = parseInt($('#sdate').val().split('-')[1]);
-    let sdateDate = parseInt($('#sdate').val().split('-')[2]);
-    let sdate = new Date(sdateYear, sdateMonth, sdateDate);
+	let sdate = getDate($('#sdate').val());
+	let edate = getDate($('#edate').val());
+	let rdate = getDate($('#rdate').val());
     
-    let edateYear = parseInt($('#edate').val().split('-')[0]);
-    let edateMonth = parseInt($('#edate').val().split('-')[1]);
-    let edateDate = parseInt($('#edate').val().split('-')[2]);
-    let edate = new Date(edateYear, edateMonth, edateDate);
+
     // 달력에서 표기하는 날짜 객체
     let currentYear = thisMonth.getFullYear(); // 달력에서 표기하는 연
     let currentMonth = thisMonth.getMonth(); // 달력에서 표기하는 월
@@ -381,6 +379,9 @@ function calendarInit()
 	let urlParams = new URLSearchParams(window.location.search); //현재 url params
 	if(urlParams.has('idx')){renderCalender_ajax(thisMonth,sdate,edate);}
 	else{renderCalender(thisMonth,sdate,edate);}
+
+	
+
 
 	//등록
     function renderCalender(thisMonth,sdate,edate) 
@@ -441,7 +442,7 @@ function calendarInit()
                     else{arr_day.push(val);$(this).addClass('today');}
 					$('#open_date').val(arr_day.join("|"));
 				});
-
+                
 				reloadCalendar();
 			}
 		});
@@ -465,7 +466,7 @@ function calendarInit()
 		else{renderCalender(thisMonth,sdate,edate);}
 		reloadCalendar();
     });
-	
+    
     //데이터에 해당되는 달력에 마킹
 	function reloadCalendar()
 	{
@@ -480,6 +481,10 @@ function calendarInit()
         //오늘 날짜 표기
         if (today.getMonth() == currentMonth) {
             $(`.dates .current:eq(${today.getDate() -1})`).addClass('select');
+        }
+		//접수 날짜 표기
+        if (rdate.getMonth() == (currentMonth-1)) {
+            $(`.dates .current:eq(${rdate.getDate() -1})`).addClass('rdate');
         }
 	}
 
@@ -510,33 +515,72 @@ function calendarInit()
         for (let i = 1; i <= (7 - nextDay == 7 ? 6 : 6 - nextDay); i++) {
             calendar.push("<div class=\"day next disable\">" + i + "</div>")
         }
-            
+        $('.dates .current').off('click');
         $('.dates').html(calendar.join(""));
         //오늘 날짜 표기
         if (today.getMonth() == currentMonth) {
             $(`.dates .current:eq(${today.getDate() -1})`).addClass('select');
         }
-        // if(!isNaN(sdate.getMonth()))
-        // {
-        //     $('.dates .current').each(function(){
-        //     if(sdate.getMonth()==currentMonth && sdate.getDate()==$(this).text()){
-        //          $(this).removeClass('disable');
-        //          console.log($(this));
-        //     }
-        //     });
-        // }
-        // $('#sdate').on('change', function(){
-            
-        // });
-
+        //기간 설정한 날짜 활성화
+        $('.dates .current').each(function(){
+            if(sdate.getMonth()==edate.getMonth()){
+                if($(this).text()>=sdate.getDate()&& $(this).text()<=edate.getDate()){
+                    $(this).removeClass('disable');
+                    $(this).addClass('bold');
+                }
+            }else{
+				let cmonth = currentMonth+1;
+                if(sdate.getMonth()==cmonth && $(this).text()>=sdate.getDate() ){
+                    $(this).removeClass('disable');
+                    $(this).addClass('bold');
+                }else if(edate.getMonth()==cmonth && $(this).text()<=edate.getDate()){
+					$(this).removeClass('disable');
+                    $(this).addClass('bold');
+                }else if(sdate.getMonth()<cmonth && edate.getMonth()>cmonth){
+					$(this).removeClass('disable');
+                    $(this).addClass('bold');
+				}
+            }
+        });
+		//접수 날짜 표기
+		if (rdate.getMonth()-1 == currentMonth) {
+			$(`.dates .current:eq(${rdate.getDate() -1})`).addClass('rdate');
+		}
     }
-    // $('.dates .current').each(function(){
-    // if(sdate.getMonth()==currentMonth && sdate.getDate()==$(this).text()){
-    //         $(this).removeClass('disable');
-    //         console.log($(this));
-    // }
-    // });
+	
 
+    //요일에 해당하는 데이터 전부 클릭
+	$('.days .day').on('click',function(){
+		let sel_yoil=arr_yoil.indexOf($(this).text());
+		$('.dates .current').each(function(){
+			if($(this).hasClass('disable')==false){
+				thisMonth = new Date(currentYear, currentMonth, $(this).text());
+				if($(this).hasClass('today')){
+					//$(this).removeClass('today');for(let i=0; i< arr_day.length; i++){if(arr_day[i]== val){arr_day.splice(i, 1);i--;}}
+				}else{
+					if(thisMonth.getDay()==sel_yoil){
+						console.log($(this).text());
+						let mon = thisMonth.getMonth()+1;
+						let day = thisMonth.getDate();
+						if(mon<10){mon="0"+mon;}
+						if(day<10){day="0"+day;}
+						arr_day.push(thisMonth.getFullYear()+"-"+mon+"-"+day);
+					};
+				}
+			}
+		});
+		$('#open_date').val(arr_day.join("|"));
+		reloadCalendar();
+	});
+
+	//날짜값
+	function getDate(str)
+	{
+		let year = parseInt(str.split('-')[0]);
+		let month = parseInt(str.split('-')[1]);
+		let date = parseInt(str.split('-')[2]);
+		return new Date(year, month, date);
+	}
 }
 </script>
 
