@@ -4,7 +4,8 @@ $new_page_code=9030;
 $member_only=true;
 $cpn_deny=true;
 $today=date('Y-m-d');
-$to_day=date('Ymd');
+$dtm=date("Y-m-d H:i:s");
+// $to_day=date('Ymd');
 include($_SERVER["DOCUMENT_ROOT"]."/lec/inc/header.php");
 
 //주문번호
@@ -13,8 +14,6 @@ $order_no=date("YmdHis").rand(1000,9999);
 
 //이용료 할인
 $allow_pay_custom=false;
-//$result=sql_query("SELECT * FROM {$my_db}.tm_member WHERE id='{$client_id}' LIMIT 0,1");
-//$rs=mysql_fetch_array($result);
 $stmt=$pdo->prepare("SELECT * FROM {$my_db}.tm_member WHERE id='{$client_id}' LIMIT 0,1");
 $stmt->execute();
 $rs=$stmt->fetch();
@@ -71,11 +70,6 @@ if($rs[pay_custom]==1)
 		<th>금액</th>
 	</tr>
 <?
-//$result=sql_query("SELECT * FROM {$my_db}.te_lecture WHERE hide=0 AND (lec_code!=103 AND lec_code!=104 AND lec_code!=117) AND price > 0 AND ctgr BETWEEN 20 AND 22");
-
-//cg_sector : 103~110 까지는 동영상 기사단 
-//$result=sql_query("SELECT * FROM {$my_db}.te_lecture WHERE hide=0 AND price > 0");
-//while($rs=mysql_fetch_array($result))
 $stmt=$pdo->prepare("SELECT * FROM {$my_db}.te_lecture WHERE hide=0 AND price > 0 and pay_on=1");
 $stmt->execute();
 while($rs=$stmt->fetch())
@@ -89,6 +83,12 @@ while($rs=$stmt->fetch())
 		<td class='center'>{$rs[days]}</td>
 		<td class='right'>".number_format($rs[price])."</td>
 	</tr>";
+}
+
+if($on_off == '오프라인 강의신청') {
+    $on_off = 0;
+} else{
+    $on_off = 1;
 }
 ?>
 </table>
@@ -106,31 +106,59 @@ while($rs=$stmt->fetch())
         <th>오프라인</th>
 	</tr>
 <?
-$stmt=$pdo->prepare("SELECT * FROM {$my_db}.tl_edu");
+$stmt=$pdo->prepare("SELECT * FROM {$my_db}.tl_edu WHERE rdate<='{$dtm}'");
 $stmt->execute();
 $html=array();
 while($rs=$stmt->fetch())
 {
-    $html[]="<tr height='40' id='row_{$rs[edu_code]}'>";
-    $html[]="<td>{$rs['edu_title']} {$on_off_ment}</td>";
-    $html[]="<td class='center'>{$rs['edu_teacher']}</td>";
-    $html[]="<td class='center'>".substr($rs['sdate'],5,5)."</td>";
-    $html[]="<td class='center'>".substr($rs['edate'],5,5)."</td>";
-    $html[]="<td class='right'>".number_format($rs['edu_pay'])."</td>";
-    $html[]="<td class='center'>{$rs['pay_people']}/{$rs['edu_people']}</td>";
-    if($rs['on_off']==0){
-        $html[]="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_{$rs['on_off']}' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}'  disabled></td>";
-        if($rs['pay_people']==$rs['edu_people']){$html[]="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_{$rs['on_off']}' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}'disabled></td>";}
-        else{$html[]="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_{$rs['on_off']}' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}'></td>";}
-    }elseif($rs['on_off']==1){
-		$html[]="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_{$rs['on_off']}' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}'></td>";
-        $html[]="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_{$rs['on_off']}' name=\"edu\" value='{$rs['edu_pay']}'  data-code='{$rs['edu_title']}' disabled></td>";
-	}else{
-		$html[]="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_1' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}'></td>";
-        if($rs['pay_people']==$rs['edu_people']){$html[]="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_{$rs['on_off']}' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}'  disabled></td>";}
-        else{$html[]="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_0' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}'></td>";}
-	}
-    
+    $tr="<tr height='40' id='row_{$rs[edu_code]}'>";
+    $tr.="<td>{$rs['edu_title']} {$on_off_ment}</td>";
+    $tr.="<td class='center'>{$rs['edu_teacher']}</td>";
+    $tr.="<td class='center'>".substr($rs['sdate'],5,5)."</td>";
+    $tr.="<td class='center'>".substr($rs['edate'],5,5)."</td>";
+    $tr.="<td class='right'>".number_format($rs['edu_pay'])."</td>";
+    $tr.="<td class='center'>{$rs['pay_people']}/{$rs['edu_people']}</td>";
+
+    $off_o="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_0' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}'></td>"; //오프라인 오픈
+    $off_x="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_0' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}' disabled></td>"; //오프라인 오프
+    $on_o="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_1' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}'></td>"; //온라인 오픈
+    $on_x="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_1' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}'  disabled></td>"; //오프라인 오프
+    switch($rs['state'])
+    {
+        ##자동
+        case 0 :
+        {
+            if($rs['sdate']>=$today)
+            {
+                $html[]=$tr;
+                if($rs['on_off']==0){$html[]=$on_x;$html[]=($rs['pay_people']==$rs['edu_people'])?$off_x:$off_o;}
+                elseif($rs['on_off']==1){$html[]=$on_o;$html[]=$off_x;}
+                else{$html[]=$on_o;$html[]=($rs['pay_people']==$rs['edu_people'])?$off_x:$off_o;}
+            }
+        }break;
+        ##전체 마감(수동)
+        case 1 : 
+        {
+            $html[]=$tr;
+            $html[]=$on_x;
+            $html[]=$off_x;
+        }break;
+        ##오프라인 마감(수동)
+        case 2:
+        {
+            $html[]=$tr;
+            if($rs['on_off']==0){$html[]=$on_x;$html[]=$off_x;}
+            else{$html[]=$on_o;$html[]=$off_x;}
+        }break;
+        ##결제창 활성화(수동)
+        case 3:
+        {
+            $html[]=$tr;
+            if($rs['on_off']==0){$html[]=$on_x;$html[]=($rs['pay_people']==$rs['edu_people'])?$off_x:$off_o;}
+            elseif($rs['on_off']==1){$html[]=$on_o;$html[]=$off_x;}
+            else{$html[]=$on_o;$html[]=($rs['pay_people']==$rs['edu_people'])?$off_x:$off_o;}
+        }break;
+    }
     $html[]="</tr>";
 }
 $html[]="</table>";
@@ -153,17 +181,12 @@ echo $html;
 		<td>
 		  <label for="pay_opt1" class="hand fleft" style="width:100px"><input type="radio" id="pay_opt1" name="pay_opt" value="1" class='rdo'> <span class="rdo_ment">카드결제</span></label>
 			<label id='pay4' for="pay_opt4" class="hand fleft" style="width:100px"><input type="radio" id="pay_opt4" name="pay_opt" value="4" class='rdo'> <span class="rdo_ment">가상계좌</span></label>
-			<!-- <label for="pay_opt2" class="hand fleft" style="width:100px"><input type="radio" id="pay_opt2" name="pay_opt" value="2" checked class='rdo'> <span class="rdo_ment">통장입금</span></label> &nbsp; -->
 			<? if(!$mobile_agent) : ?>
-			<!-- <label for="pay_opt3" class="hand fleft"><input type="radio" id="pay_opt3" name="pay_opt" value="3"  class='rdo'> <span class="rdo_ment">실시간 계좌이체</span></label> -->
 			<label style='display:inline-block'>
 				<span class="pay_opt_ment1 blue bold pay_opt_ment" >(카드결제 승인과 동시에 <span class='red'>자동으로 오픈</span>됩니다.)</span>
 				<span class="pay_opt_ment4 blue bold pay_opt_ment" style='display:none'>(지정된 계좌 입금 후 <span class='red'>자동으로 오픈</span>됩니다.)</span>
-				<!--<span class="pay_opt_ment3 blue bold pay_opt_ment" style='dispaly:none'>(이체 후 자동으로 오픈되고 공인인증서가 필요 : <span class='red'>법인계좌 불가</span>)</span>-->
 			</label>
 			<? endif; ?>
-			<!--<br>
-			<span class="red">※ 현재 전자결제(카드결제/실시간 계좌이체)연동 테스트중 이므로, 통장입금 부탁드립니다.</span>-->
 		</td>
 	</tr>
 	<tr   height='40' name="row_bank">
@@ -179,6 +202,8 @@ echo $html;
 		<td><input type="text" id="" name="pay_name" value="<?=$client_name?>" class="tx150"> (입금자 확인으로 시간이 지연 되니, 전화 주시면 바로 사용 가능합니다.) </td>
 	</tr>
 </table>
+<span id="off_ment" class="blue bold" style='display:none'>(경매교육은 <span class='red'>카드결제만 가능</span>합니다.)</span>
+
 <br>
 <div class="center"><a href="javascript:pay()"><span class="btn_box_ss btn_tank radius_10" style="width:130px">신청 및 결제하기</span></a></div>
 	<input type="hidden" id="amt" name="amt" value="0">
@@ -188,20 +213,6 @@ echo $html;
 	<input type="hidden" id="dc_rate" name="dc_rate" value="<?=$dc_rate?>">
 </form>
 </div>
-<!--
-<div id="bank_info" style="display:none">
-<?
-//계좌 안내
-//bank_info();
-?>
-</div>
-<div id="bank_info_mv" style="">
-<?
-//동영상 계좌 안내
-//bank_info_mv();
-?>
-</div>
--->
 <?
 $price_json=urldecode(json_encode($price_arr));
 $price_lec_json=urldecode(json_encode($price_lec_arr));
@@ -229,7 +240,19 @@ $(document).ready(function()
 	$("tr[name=row]").mouseover(function(){$(this).css({"background":"#fff6d7"});}).mouseout(function(){$(this).css({"background":""});});
   //결제방법 최초선택
   $("#pay_opt1").prop("checked", true);
-  $("tr[name=row_bank]").hide();	
+  $("tr[name=row_bank]").hide();
+
+  // view.php -> 경매교육신청 체크이벤트
+  let pay_code = '<?=$pay_code?>';
+  let edu_code = '<?=$edu_code?>';
+  let on_off = '<?=$on_off?>';
+
+  if(pay_code != '' && edu_code != '') {
+    payform_ctrl(pay_code);
+    $('#pay_code_'+pay_code).prop('checked',true);
+    $('#chk_'+edu_code+"_"+on_off).prop('checked',true);
+    calc_off($('#chk_'+edu_code+"_"+on_off)[0]);
+  }
 });
 
 function payform_ctrl(pay_code)
@@ -248,7 +271,8 @@ function payform_ctrl(pay_code)
 		$("#tbl_price_auct").hide();
         $("#tbl_price_off").hide();
 		$("#tbl_price_lect").show();
-        $("#pay4").show();
+        $("#off_ment").hide();
+		$("#pay4").show();
 
 	}
     else if(pay_code==102)
@@ -257,6 +281,7 @@ function payform_ctrl(pay_code)
         $("#tbl_price_auct").hide();
 		$("#tbl_price_lect").hide();
         $("#tbl_price_off").show();
+		$("#off_ment").show();
         $("#pay4").hide();
 
     }
