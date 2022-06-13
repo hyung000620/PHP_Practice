@@ -12,9 +12,9 @@ if($client_level<5)
 $pageNo=($pageNo>0)? $pageNo : 1;
 $dataSize=($dataSize>0)? $dataSize : 30;
 $pageSize=($pageSize>0)? $pageSize : 10;
+$today=date("Y-m-d");
 
-
-$SQL="SELECT * FROM {$my_db}.tl_edu WHERE 1";
+$SQL="SELECT * FROM {$my_db}.tl_edu WHERE edate >= '{$today}'";
 $stmt=$pdo->prepare($SQL);
 $stmt->execute();
 $edu_arr=array();
@@ -46,6 +46,7 @@ while($rs=$stmt->fetch())
 		    <option value=1 > 결제대기 </option>
 		    <option value=2> 기한만료 </option>
 		    <option value=3> 결제완료 </option>
+			<option value=4> 결제취소 </option>
 		  </select>
 		</td>
         <th>강좌 선택</th>
@@ -78,6 +79,7 @@ while($rs=$stmt->fetch())
 <br>
 <div class='move_position'></div>
 <div id="tosspay_block">
+  <div id="naviHead"></div>	
   <table class="tbl_grid border">
      <thead id="vsThead"></thead>
      <tbody id="vsTbody"></tbody>
@@ -121,6 +123,7 @@ function list_()
 	manualChange=true;
   var arr_head=[];
   var arr_body=[];
+  var navi=[];
 	$("#tosspay_block").show();
   $.ajax(
 	{
@@ -130,16 +133,19 @@ function list_()
 		dataType: "JSON",
 		success: function(data)
 		{
+		  if(typeof data.pay_people != "undefined"){
+			navi.push("<div style='float:right' class='bold f15'>인원:"+data.pay_people+"/"+data.edu_people+"</div>");
+		  }
 		  arr_head.push("<tr>");
 		  arr_head.push(" <th>No</th>");
 		  arr_head.push(" <th>회원명</th>");
 		  arr_head.push(" <th>아이디</th>");
+          arr_head.push(" <th>협력업체</th>");
 		  arr_head.push(" <th>신청강좌</th>");
-		  arr_head.push(" <th>이용료(원)</th>");
 		  arr_head.push(" <th>결제금액(원)</th>");
-		  arr_head.push(" <th>가상계좌</th>");
-		  arr_head.push(" <th>입금기한</th>");
+		  arr_head.push(" <th>결제방법</th>");
 		  arr_head.push(" <th>등록일</th>");
+		  arr_head.push(" <th>결제상태</th>")
 		  //arr_head.push(" <th>전달</th>");
 		  arr_head.push("</tr>");
 		  $("#vsThead").html(arr_head.join(""));
@@ -147,22 +153,27 @@ function list_()
 			{
 			  $.each(data.item,function()
 				{
-				  var accountinfo=this.paybank+"-"+this.payaccount+"("+this.payname+")";
+				  let status =this.status;
+				  if(status=="DONE"){status="<span class='bold'>결제완료</span>";}
+				  else if(status=="WAITING_FOR_DEPOSIT"){status="<span class='bold blue'>결제대기</span>";}
+				  else {status="<span class='bold red'>결제취소</span>";}
+				  let payopt = (this.pay_opt==1)?"카드":"가상계좌";	
 				  arr_body.push("<tr onclick=\"location.href='/SuperAdmin/member/member_detail.php?id="+this.id+"'\" style='cursor:pointer' class='list'>");
 				  arr_body.push(" <td class='center'>"+this.no+"</td>");
 				  arr_body.push(" <td class='center'>"+this.name+"</td>");
 				  arr_body.push(" <td>"+this.id+"</td>");
+                  arr_body.push(" <td>"+this.ptnr+"</td>")
 				  arr_body.push(" <td>"+this.goods+"</td>");
-				  arr_body.push(" <td class='right'>"+this.srv_price+"</td>");
 				  arr_body.push(" <td class='right bold red'>"+this.pay_price+"</td>");
-				  arr_body.push(" <td class='bold'>"+accountinfo+"</td>");
-				  arr_body.push(" <td class='center'>"+this.duedate+"</td>");
+				  arr_body.push(" <td class='bold'>"+payopt+"</td>");
 				  arr_body.push(" <td class='center'>"+this.wdate+"</td>");
+				  arr_body.push(" <td class='center'>"+status+"</td>");
 				  //arr_body.push(" <td class='center'><span style='padding:5px 10px;color:#fff;background-color:blue;cursor:pointer;-moz-border-radius:12px;-webkit-border-radius:12px;border-radius:12px;'>SMS</span></td>");
 				  arr_body.push("</tr>");
 				});				 
 			}
       $("#vsTbody").html(arr_body.join(""));
+	  if($('#etate').val()!=0){$('#naviHead').html(navi.join(""));}
       // history push
 			$("#paging").html(paging2(data.rowCnt, $("#pageNo").val(), loadPage, $("#dataSize").val(), $("#pageSize").val()));
 			History.pushState({section:1,page_index:$("#pageNo").val()}, "탱크옥션", "?page="+$("#pageNo").val());

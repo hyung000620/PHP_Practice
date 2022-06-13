@@ -624,7 +624,7 @@ while($rs=$stmt->fetch())
 	$sector="";
 	if($rs[pay_code]==100) $sector=$state_arr[$rs[state]];
 	elseif($rs[pay_code]==101) $sector="<span class='bg_yellow red'>[강좌]</span>".$lect_arr[$rs[sector]];
-    elseif($rs[pay_code]==102) $sector="<span class='bg_yellow blue'>[경매교육]</span>".$edu_arr[$rs[sector]];
+    elseif($rs[pay_code]==102) $sector="<span class='white' style='background:blue' >[경매교육]</span>".$edu_arr[$rs[sector]];
 
 	$remain="";
 	if($rs[validity] >= $today)
