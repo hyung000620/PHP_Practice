@@ -25,8 +25,7 @@ while($rs=$stmt->fetch())
 }
 if($idx)
 {
-	//$result=sql_query("SELECT * FROM {$my_db}.tl_edu WHERE idx='{$idx}' LIMIT 0,1");
-	//$rs=mysql_fetch_array($result);
+
 	$stmt=$pdo->prepare("SELECT * FROM {$my_db}.tl_edu WHERE idx='{$idx}' LIMIT 0,1");
 	$stmt->execute();
 	$rs=$stmt->fetch();
@@ -65,6 +64,9 @@ else
 </style>
 <form name="fm" id="fm" action="edu_db.php" method="post" enctype="multipart/form-data">
 <div class="center bold f18" style='padding:10px'>오프라인 교육 <?=$mode_ment?></div>
+<?
+
+?>
 <table class="tbl_grid">
 	<!--
 	<tr>
@@ -91,7 +93,7 @@ else
 				foreach($tArr as $v){
                     list($name,$tid)=explode("|",$v);
 					$html.= "<option value='{$v}'";
-					if($idx && $name == $rs[edu_teacher]){$html.="selected";}
+					// if($idx && $name == $rs[edu_teacher]){$html.="selected";}
 					$html.= ">{$name}</option>";
 				}
 				echo $html;
@@ -116,25 +118,31 @@ else
 	<tr>
 		<th>온/오프라인</th>
 		<td>
-			<input type="radio" name="on_off" value="0"<? if($rs[on_off]==0) echo " checked"; ?>>오프라인
+			<input type="radio" name="on_off"  value="0"<? if($rs[on_off]==0) echo " checked"; ?>>오프라인
 			&nbsp;&nbsp;
 			<input type="radio" name="on_off" value="1"<? if($rs[on_off]==1) echo " checked"; ?>>온라인
 			&nbsp;&nbsp;
 			<input type="radio" name="on_off" value="2"<? if($rs[on_off]==2) echo " checked"; ?>>온/오프라인
 		</td>
 	</tr>
+    <tr>
+		<th>할인 적용</th>
+		<td>
+			<input type="radio" name="dc_temp"  value="0"<? if($rs[dc_temp]==0) echo " checked"; ?>>할인 적용(X)
+			&nbsp;&nbsp;
+			<input type="radio" name="dc_temp" value="1"<? if($rs[dc_temp]==1) echo " checked"; ?>>할인 적용(O)
+		</td>
+	</tr>
 	<tr>
 		<th>모집/마감</th>
 		<td>
-            <input type="radio" name="state" value="0"<? if($rs[receipt]==0) echo " checked"; ?>>자동
+            <input type="radio" name="state" value="0"<? if($rs[state]==0) echo " checked"; ?>>자동
 			&nbsp;&nbsp;
-			<input type="radio" name="state" value="1"<? if($rs[receipt]==1) echo " checked"; ?>>마감
+			<input type="radio" name="state" value="1"<? if($rs[state]==1) echo " checked"; ?>>전체 마감(수동)
 			&nbsp;&nbsp;
-			<input type="radio" name="state" value="2"<? if($rs[receipt]==2) echo " checked"; ?>>오프라인 마감
+			<input type="radio" name="state" value="2"<? if($rs[state]==2) echo " checked"; ?>>오프라인 마감(수동)
 			&nbsp;&nbsp;
-			<input type="radio" name="state" value="3"<? if($rs[receipt]==3) echo " checked"; ?>>모집중
-            &nbsp;&nbsp;
-            <input type="radio" name="state" value="4"<? if($rs[receipt]==4) echo " checked"; ?>>진행중
+			<input type="radio" name="state" value="3"<? if($rs[state]==3) echo " checked"; ?>>결제창 활성화(수동)
 		</td>
 	</tr>
 	<tr>
@@ -151,7 +159,23 @@ else
 	<tr>
 		<th>접수 일자</th>
 		<td>
-			<input type="text" name="rdate" id="rdate" value='<?=$rs[rdate]?>' class="tx_date" autocomplete='off'>
+			<input type="text" name="rdate" id="rdate" value='<?=$date=($rs[rdate])?date('Y-m-d',strtotime($rs[rdate])):"";?>' class="tx_date" autocomplete='off'>
+            &nbsp;&nbsp;
+            <select name="time" id="time">
+                <?
+                    $html="";
+                    for($t=8; $t<18; $t++){
+                        $time = date('H',$rs[rdate]);
+                        $html.="<option value='{$t}'";
+                        if($rs[rdate] && date('H',strtotime($rs[rdate]))==$t)
+                        {
+                            $html.=" selected";
+                        }
+                        $html.=">{$t}시</option>";
+                    }
+                    echo $html;
+                ?>
+            </select>
 		</td>
 	</tr>
 	<tr>
@@ -171,6 +195,10 @@ else
 	<tr>
 		<th>모집정원</th>
 		<td><input type="numbere" id="edu_people" name="edu_people" value="<?=$rs[edu_people]?>" class="tx50">명</td>
+	</tr>
+	<tr>
+		<th>결제인원</th>
+		<td><input type="numbere" id="pay_people" name="pay_people" value="<?=$rs[pay_people]?>" class="tx50" readonly>명</td>
 	</tr>
 	<tr>
 		<th>문의전화</th>
@@ -275,7 +303,7 @@ else
 		<td width="30%"></td>
 		<td width="40%" class="center"><input type="button" id="btnSubmit" value=" 저장하기 "></td>
 		<td width="30%" class="right"><input type="button" value="목록으로" onclick="location.href='edu_list.php'"></td>
-	</tr>
+	</tr>   
 </table>
 	<input type="hidden" name="idx" value="<?=$rs[idx]?>">
 	<input type="hidden" name="mode" value="<?=$mode?>">
@@ -291,20 +319,21 @@ $(document).ready(function(){
 	calendarInit();
 	$("#sdate,#edate,#rdate").datepicker({changeMonth:true,changeYear:true,showButtonPanel:true});	
 	$("#btnSubmit").click(function(){fm_check();});
-	$('#sel_teacher').on('change', function(){
-        $.ajax(
-        {
-            type: "POST",
-            url:"/SuperAdmin/xml/edu_write.php",
-            data:$('#fm').serialize(),
-            dataType: 'JSON',
-            success: function(data){
-                $('#edu_id').val(data.edu_id);
-                let t_val = $('#sel_teacher').val().split("|")[0];
-                if(t_val==0){$('#edu_teacher').val("");$('#edu_id').removeAttr('readonly');$('#edu_teacher').removeAttr('readonly');}
-                else{$('#edu_teacher').val(t_val);$('#edu_id').attr('readonly',true);$('#edu_teacher').attr('readonly',true);}
-            }
-        });
+	if($('#edu_id').val()!="" && $('#edu_teacher').val()!=""){
+        $('#sel_teacher').val($('#edu_teacher').val()+"|"+$('#edu_id').val()).attr('selected','selected');
+    }
+    $('#sel_teacher').on('change', function(){
+        let name = $(this).val().split("|")[0];
+        let tid = $(this).val().split("|")[1];
+        $('#edu_id').val(tid);
+        $('#edu_teacher').val(name);
+        $('#edu_id').attr('readonly',true);
+        $('#edu_teacher').attr('readonly',true);
+        if($(this).val()==0){
+            $('#edu_teacher').val("");
+            $('#edu_id').attr('readonly',false);
+            $('#edu_teacher').attr('readonly',false);    
+        }
 	});
 	$('#edate, #sdate, #rdate').on('change', function(){calendarInit();});
 });

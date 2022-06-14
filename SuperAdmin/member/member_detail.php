@@ -96,7 +96,10 @@ if($rs[dc_rate])
 		$dc_edate=$rs[dc_edate];
 	}
 }
-
+if($rs[edu_dc])
+{
+    $edu_dc=30;
+}
 //은행정보-관리자용
 $bank_arr=array(10 => array("name"=>"국민은행",		"no"=>"361437-04-012881"));
 				//11 => array("name"=>"국민은행(동)",	"no"=>"361437-04-010225"));
@@ -173,6 +176,7 @@ $bank_arr=array(10 => array("name"=>"국민은행",		"no"=>"361437-04-012881"));
 		<th>지정금액</th>
 		<td>
 			<input type="checkbox" name="pay_custom" value="1"<? if($rs[pay_custom]) echo " checked"; ?>>결제허용
+            <input type="checkbox" name="edu_dc" value="1"<? if($rs[edu_dc]) echo " checked"; ?>>강좌할인
 		</td>
 		<!--
 		<th>추천 ID</th>
@@ -180,7 +184,7 @@ $bank_arr=array(10 => array("name"=>"국민은행",		"no"=>"361437-04-012881"));
 		-->
 	</tr>
 	<tr>
-		<th<? if($dc_rate) echo " class='orange bold'"?>>할인적용</th>
+		<th<? if($dc_rate) echo " class='orange bold'"?> >할인적용</th>
 		<td colspan="3">
 			<select name="dc_rate">
 				<option value="0">없음</option>
@@ -439,18 +443,27 @@ $stmt->execute();
 $html=array();
 while($rs=$stmt->fetch())
 {
+    if($edu_dc && $rs['dc_temp']==1){
+        $pay=round($rs[edu_pay]*(1-$edu_dc*0.01)/1000)*1000;
+    }else{
+        $pay=$rs[edu_pay];
+    }
     $tr="<tr id='row_{$rs[edu_code]}'>";
     $tr.="<td>{$rs['edu_title']} {$on_off_ment}</td>";
     $tr.="<td class='center'>{$rs['edu_teacher']}</td>";
     $tr.="<td class='center'>".substr($rs['sdate'],5,5)."</td>";
     $tr.="<td class='center'>".substr($rs['edate'],5,5)."</td>";
-    $tr.="<td class='right'>".number_format($rs['edu_pay'])."</td>";
+    if($edu_dc && $rs['dc_temp']==1){
+        $tr.="<td class='right'><span class='gray'><strike>".number_format($rs[edu_pay])."</strike></span><br>".number_format($pay)."</td>";
+    }else{
+        $tr.="<td class='right'>".number_format($pay)."</td>";
+    }
     $tr.="<td class='center'>{$rs['pay_people']}/{$rs['edu_people']}</td>";
 
-    $off_o="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_0' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}'></td>"; //오프라인 오픈
-    $off_x="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_0' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}' disabled></td>"; //오프라인 오프
-    $on_o="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_1' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}'></td>"; //온라인 오픈
-    $on_x="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_1' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}'  disabled></td>"; //오프라인 오프
+    $off_o="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_0' name=\"edu\" value='{$pay}' data-code='{$rs['edu_title']}'></td>"; //오프라인 오픈
+    $off_x="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_0' name=\"edu\" value='{$pay}' data-code='{$rs['edu_title']}' disabled></td>"; //오프라인 오프
+    $on_o="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_1' name=\"edu\" value='{$pay}' data-code='{$rs['edu_title']}'></td>"; //온라인 오픈
+    $on_x="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_1' name=\"edu\" value='{$pay}' data-code='{$rs['edu_title']}'  disabled></td>"; //오프라인 오프
     
     if($rs['state']==0 && $rs['sdate']<$today){$tr="";}
 

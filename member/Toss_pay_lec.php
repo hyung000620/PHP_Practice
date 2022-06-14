@@ -5,7 +5,6 @@ $member_only=true;
 $cpn_deny=true;
 $today=date('Y-m-d');
 $dtm=date("Y-m-d H:i:s");
-// $to_day=date('Ymd');
 include($_SERVER["DOCUMENT_ROOT"]."/lec/inc/header.php");
 
 //주문번호
@@ -25,6 +24,10 @@ if($rs[dc_rate])
 		$dc_sdate=$rs[dc_sdate];
 		$dc_edate=$rs[dc_edate];
 	}
+}
+if($rs[edu_dc])
+{
+    $edu_dc=30;
 }
 if($rs[pay_custom]==1)
 {
@@ -111,18 +114,31 @@ $stmt->execute();
 $html=array();
 while($rs=$stmt->fetch())
 {
+    if($edu_dc && $rs['dc_temp']==1){
+        $pay=round($rs[edu_pay]*(1-$edu_dc*0.01)/1000)*1000;
+    }else{
+        $pay=$rs[edu_pay];
+    }
     $tr="<tr height='40' id='row_{$rs[edu_code]}'>";
     $tr.="<td>{$rs['edu_title']} {$on_off_ment}</td>";
     $tr.="<td class='center'>{$rs['edu_teacher']}</td>";
     $tr.="<td class='center'>".substr($rs['sdate'],5,5)."</td>";
     $tr.="<td class='center'>".substr($rs['edate'],5,5)."</td>";
-    $tr.="<td class='right'>".number_format($rs['edu_pay'])."</td>";
+    if($edu_dc && $rs['dc_temp']==1){
+        $tr.="<td class='right'><span class='gray'><strike>".number_format($rs[edu_pay])."</strike></span><br>".number_format($pay)."</td>";
+    }else{
+        $tr.="<td class='right'>".number_format($pay)."</td>";
+    }
     $tr.="<td class='center'>{$rs['pay_people']}/{$rs['edu_people']}</td>";
 
-    $off_o="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_0' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}'></td>"; //오프라인 오픈
-    $off_x="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_0' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}' disabled></td>"; //오프라인 오프
-    $on_o="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_1' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}'></td>"; //온라인 오픈
-    $on_x="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_1' name=\"edu\" value='{$rs['edu_pay']}' data-code='{$rs['edu_title']}'  disabled></td>"; //오프라인 오프
+    $off_o="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_0' name=\"edu\" value='{$pay}' data-code='{$rs['edu_title']}'></td>"; //오프라인 오픈
+    $off_x="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_0' name=\"edu\" value='{$pay}' data-code='{$rs['edu_title']}' disabled></td>"; //오프라인 오프
+    $on_o="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_1' name=\"edu\" value='{$pay}' data-code='{$rs['edu_title']}'></td>"; //온라인 오픈
+    $on_x="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_1' name=\"edu\" value='{$pay}' data-code='{$rs['edu_title']}'  disabled></td>"; //오프라인 오프
+    
+    if($rs['state']==0 && $rs['sdate']<$today){$tr="";}
+
+    $html[]=$tr;
     switch($rs['state'])
     {
         ##자동
@@ -130,33 +146,29 @@ while($rs=$stmt->fetch())
         {
             if($rs['sdate']>=$today)
             {
-                $html[]=$tr;
-                if($rs['on_off']==0){$html[]=$on_x;$html[]=($rs['pay_people']==$rs['edu_people'])?$off_x:$off_o;}
+                if($rs['on_off']==0){$html[]=$on_x;$html[]=($rs['pay_people']>=$rs['edu_people'])?$off_x:$off_o;}
                 elseif($rs['on_off']==1){$html[]=$on_o;$html[]=$off_x;}
-                else{$html[]=$on_o;$html[]=($rs['pay_people']==$rs['edu_people'])?$off_x:$off_o;}
+                else{$html[]=$on_o;$html[]=($rs['pay_people']>=$rs['edu_people'])?$off_x:$off_o;}
             }
         }break;
         ##전체 마감(수동)
         case 1 : 
         {
-            $html[]=$tr;
             $html[]=$on_x;
             $html[]=$off_x;
         }break;
         ##오프라인 마감(수동)
         case 2:
         {
-            $html[]=$tr;
             if($rs['on_off']==0){$html[]=$on_x;$html[]=$off_x;}
             else{$html[]=$on_o;$html[]=$off_x;}
         }break;
         ##결제창 활성화(수동)
         case 3:
         {
-            $html[]=$tr;
-            if($rs['on_off']==0){$html[]=$on_x;$html[]=($rs['pay_people']==$rs['edu_people'])?$off_x:$off_o;}
+            if($rs['on_off']==0){$html[]=$on_x;$html[]=($rs['pay_people']>=$rs['edu_people'])?$off_x:$off_o;}
             elseif($rs['on_off']==1){$html[]=$on_o;$html[]=$off_x;}
-            else{$html[]=$on_o;$html[]=($rs['pay_people']==$rs['edu_people'])?$off_x:$off_o;}
+            else{$html[]=$on_o;$html[]=($rs['pay_people']>=$rs['edu_people'])?$off_x:$off_o;}
         }break;
     }
     $html[]="</tr>";
@@ -226,7 +238,6 @@ var pj_lec=<?=$price_lec_json?>;
 $(document).ready(function()
 {
   $(".pay_opt_ment4,.pay_opt_ment3").hide();	
-	$("#tbl_price_auct input:checkbox").click(function(){calc(this);});
 	$("#tbl_price_lect input:checkbox").click(function(){calc_lect();});
     $("#tbl_price_off input:radio").click(function(){calc_off(this);});
 
@@ -257,18 +268,9 @@ $(document).ready(function()
 
 function payform_ctrl(pay_code)
 {
-	if(pay_code==100)
-	{   
-    $("#tbl_price_lect input:checkbox:checked").prop("checked",false);
-		$("#tbl_price_lect").hide();
-        $("#tbl_price_off").hide();
-		$("#tbl_price_auct").show();
-
-	}
-	else if(pay_code==101)
-	{	
-    $("#tbl_price_auct input:checkbox:checked").prop("checked",false).parent().removeClass("orange bold");	
-		$("#tbl_price_auct").hide();
+	if(pay_code==101)
+	{
+        $("#tbl_price_lect input:checkbox:checked").prop("checked",false);	
         $("#tbl_price_off").hide();
 		$("#tbl_price_lect").show();
         $("#off_ment").hide();
@@ -277,8 +279,7 @@ function payform_ctrl(pay_code)
 	}
     else if(pay_code==102)
     {
-        $("#tbl_price_off input:checkbox:checked").prop("checked",false);
-        $("#tbl_price_auct").hide();
+        $("#tbl_price_off input:radio:checked").prop("checked",false);
 		$("#tbl_price_lect").hide();
         $("#tbl_price_off").show();
 		$("#off_ment").show();
