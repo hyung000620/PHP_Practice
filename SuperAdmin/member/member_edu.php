@@ -43,10 +43,11 @@ while($rs=$stmt->fetch())
 		<td>    
 		  <select name="state" id="state">
 		    <option value=0 selected> 전체 </option>
-		    <option value=1 > 결제대기 </option>
+		    <option value=1> 결제대기 </option>
 		    <option value=2> 기한만료 </option>
 		    <option value=3> 결제완료 </option>
 			<option value=4> 결제취소 </option>
+            <option value=5> 예비후보 </option>
 		  </select>
 		</td>
         <th>강좌 선택</th>
@@ -54,9 +55,7 @@ while($rs=$stmt->fetch())
             <select name="estate" id="estate">
                 <option value=0 selected>전체(모집정원)</option>
                 <?
-                    foreach($edu_arr as $k => $v) {
-                        echo "<option value='{$v['edu_code']}'>{$v['edu_title']}({$v['edu_people']})</option>";
-                    }
+                    foreach($edu_arr as $k => $v) {echo "<option value='{$v['edu_code']}'>{$v['edu_title']}({$v['edu_people']})</option>";}
                 ?>
             </select>
         </td>
@@ -156,8 +155,13 @@ function list_()
 				  let status =this.status;
 				  if(status=="DONE"){status="<span class='bold'>결제완료</span>";}
 				  else if(status=="WAITING_FOR_DEPOSIT"){status="<span class='bold blue'>결제대기</span>";}
-				  else {status="<span class='bold red'>결제취소</span>";}
-				  let payopt = (this.pay_opt==1)?"카드":"가상계좌";	
+				  else if(status=="CANCELED"){status="<span class='bold red'>결제취소</span>";}
+                  else{status="<span class='bold yellow'>예비후보</span>"}
+				  let payopt =this.pay_opt;
+                  if(payopt==1){payopt="카드";}
+                  else if(payopt==0){payopt="무통장입금";}
+                  else if(payopt==4){payopt="가상계좌";}
+                  else{payopt="예비후보";}	
 				  arr_body.push("<tr onclick=\"location.href='/SuperAdmin/member/member_detail.php?id="+this.id+"'\" style='cursor:pointer' class='list'>");
 				  arr_body.push(" <td class='center'>"+this.no+"</td>");
 				  arr_body.push(" <td class='center'>"+this.name+"</td>");
