@@ -23,9 +23,25 @@ while($rs=$stmt->fetch()){ // ◐ 강좌 준비중, ★ 강좌화면 view, ♥ �
 	$lect_arr[$rs[lec_code]]=$m_badge."·".$m_hide."·".$m_price."·".$rs[course];
 }
 //경매교육 구분
-$stmt=$pdo->prepare("SELECT edu_code,edu_title FROM {$my_db}.tl_edu");
+$today=date("Y-m-d");
+$stmt=$pdo->prepare("SELECT * FROM {$my_db}.tl_edu ORDER BY edu_code DESC");
 $stmt->execute();
-while($rs=$stmt->fetch()){$edu_arr[$rs[edu_code]]=$rs[edu_title];}
+while($rs=$stmt->fetch()){
+    //0:모집중, 1:진행중, 2:종료
+    if($rs[dp_off]==1 || $rs[edate] < $today){
+		if($rs[dp_off]==1){
+			//$status="미노출";	
+		}else{
+			$state=2;
+		}
+	}elseif ($rs[sdate] > $today){
+		$state=0;
+	}else{
+		$state=1;
+	}
+
+    $edu_arr[$rs[edu_code]]=$rs[edu_title]."|".$rs[on_off]."|".$state;
+}
 //협력업체
 $partner_arr=array();
 //$SQL=sql_query("SELECT code,sangho FROM {$my_db}.tz_partner WHERE edate='0000-00-00' OR edate > CURDATE() ORDER BY sangho");
@@ -74,6 +90,12 @@ if($paykind)  $condiArr[]="paykind={$paykind}";
 if($bank_code)	$condiArr[]="bankcode='{$bank_code}'";
 if($pay_state)	$condiArr[]="state='{$pay_state}'";
 if($pay_lec_code)	$condiArr[]="sector='{$pay_lec_code}'";
+if($pay_edu_code) $condiArr[]="sector='{$pay_edu_code}'";
+if($pay_on_off){
+    if($pay_on_off==0) $condiArr[]="months IN (0,1)";
+    elseif($pay_on_off==1) $condiArr[]="months='0'";
+    elseif($pay_on_off==2) $condiArr[]="months='1'";
+}
 if($expire)		$condiArr[]=($expire=="Y") ? "validity < CURDATE()" : "validity >= CURDATE()";
 if($free)		$condiArr[]=($free=="Y") ? "paykind=9" : "paykind!=9";
 if($ptnr)
@@ -117,7 +139,7 @@ $page_scale=10;
 $start=($start) ? $start : 0;
 
 $today=date("Y-m-d");
-$SQL="SELECT M.id,name,mobile,phone,reg_date,out_date,login,partner,state,validity,P.idx,pay_code,paydate,sector,paykind,P.money,memo,M.dc_rate,dc_sdate,dc_edate FROM {$my_db}.tm_member M LEFT OUTER JOIN {$my_db}.{$pay_db} P ON P.id=M.id WHERE {$condition} ORDER BY {$order} LIMIT {$start}, {$list_scale}";
+$SQL="SELECT M.id,name,mobile,phone,reg_date,out_date,login,partner,state,validity,P.idx,pay_code,paydate,sector,paykind,P.money,memo,M.dc_rate,dc_sdate,dc_edate,months FROM {$my_db}.tm_member M LEFT OUTER JOIN {$my_db}.{$pay_db} P ON P.id=M.id WHERE {$condition} ORDER BY {$order} LIMIT {$start}, {$list_scale}";
 if($client_id=="yspn") echo $SQL . "<br>";
 $stmt=$pdo->prepare($SQL);
 $stmt->execute();
@@ -318,6 +340,35 @@ $arr_payBank=array("10" => "국민은행","11" => "국민은행(동)","2" => "�
 			<input type="button" value="문자발송" onclick="send_sms()">
 		</td>
 	</tr>
+    <tr>
+        <th>오프라인 강좌</th>
+        <td colspan="3" >
+            <select name="pay_edu_code" id="pay_edu_code" style='width:200px'>
+                <option value="0">-선택-</option>
+                <?
+				foreach($edu_arr as $key => $val)
+				{
+                    list($title,$on_off,$state)=explode("|",$val);
+                    //0:모집중, 1:진행중, 2:종료
+                    if($state==0){$select_bg="background:white";}
+                    elseif($state==1){$select_bg="background:yellow";}
+                    elseif($state==2){$select_bg="background:#FFECDD;color:gray";}
+                    
+                    echo "<option value='{$key}'";if(($key)==$pay_edu_code) echo " selected "; echo "  style='{$select_bg}'>{$title}</option>";	
+                    
+				}
+				?>
+            </select>
+            <span class="tooltip blue-tooltip" style="position:relative;top:0px;"><p class="btn_whitegray radius_30 center" style='width:17px;font-size:11px'>?</p><span style="position:absolute;left:100px;width:280px;">
+				<font color='red'>선택 :</font>흰색-모집중, 노랑-진행중, 회색-종료
+			</span></span>
+            <select name="pay_on_off">
+                <option value='0'  style='background:white'>-전체-</option>
+                <option value='1' <?if($pay_on_off=='1') echo "selected"?> style='background:white'>오프라인</option>
+                <option value='2' <?if($pay_on_off=='2') echo "selected"?> style='background:white'>온라인</option>
+            </select>
+        </td>
+    </tr>
 </table>
 </form>
 
@@ -411,11 +462,15 @@ while($rs=$stmt->fetch())
 		$id="<strike class='gray'>".$rs[id]."</strike>";
 		$name="<strike class='gray'>".$rs[name]."</strike><br>({$rs[out_date]})";
 	}
-	$sector="";
+	
 	//$sector=$state_arr[$rs[state]];
+    list($title,$on_off,$state)=explode("|",$edu_arr[$rs[sector]]);
 	if($rs[pay_code]==100) $sector=$state_arr[$rs[state]];
 	elseif($rs[pay_code]==101) $sector="<span class='bg_yellow red'>[강좌]</span>".$lect_arr[$rs[sector]];
-    elseif($rs[pay_code]==102) $sector="<span class='white' style='background:blue'>[경매교육]</span>".$edu_arr[$rs[sector]];
+    elseif($rs[pay_code]==102) {
+        $on_off=($rs[months]==0)?"<font color='red'>★</font>": "<font color='red'>♥</font>";
+        $sector="<span class='white' style='background:blue'>[경매교육]</span>".$title.$on_off;
+    }
 	$dc_rate="";
 	if($today >= $rs[dc_sdate] && $today <= $rs[dc_edate])
 	{
@@ -480,11 +535,11 @@ if(!$total_record) echo "<div class='no_result'><span>검색 결과가 없습니
 if($client_level>=5) {
 	echo "
 	<form name='memo_fm' id='memo_fm' action='' method='post'>
-	<div style='border:1px solid #ddd;margin:10px 0;padding:10px'>
-		선택회원 메모일괄넣기 <input type='text' name='old_memo' id='old_memo' value='$old_memo'> => <input type='text' name='new_memo' id='new_memo' value='$new_memo'>
-		<input type='button' value='메모넣기' onclick='change_memo()' class='hand'>
-		<input type='hidden' name='queryType' id='queryType' value='memo_change'><input type='hidden' name='memo_id' id='memo_id' value=''><span id='url_link'></span>
-	</div>
+        <div style='border:1px solid #ddd;margin:10px 0;padding:10px'>
+            선택회원 메모일괄넣기 <input type='text' name='old_memo' id='old_memo' value='$old_memo'> => <input type='text' name='new_memo' id='new_memo' value='$new_memo'>
+            <input type='button' value='메모넣기' onclick='change_memo()' class='hand'>
+            <input type='hidden' name='queryType' id='queryType' value='memo_change'><input type='hidden' name='memo_id' id='memo_id' value=''><span id='url_link'></span>
+        </div>
 	</form>";
 	echo "
 	<form name='pay_fm' id='pay_fm' action='' method='post'>

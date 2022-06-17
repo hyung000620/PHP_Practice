@@ -74,8 +74,7 @@ switch ($mode)
   
   case 2 :
     {
-        $cdtnArr[]="pay_code=102";
-        //$cdtnArr[]="paymentkey!=''";
+        $cdtnArr[]="paymentkey!=''";
         if($state==1)
         {
             $cdtnArr[]="status='WAITING_FOR_DEPOSIT'";
@@ -93,6 +92,10 @@ switch ($mode)
         else if($state==4)
         {
             $cdtnArr[]="status='CANCELED'";
+        }
+        else if($state==5)
+        {
+            $cdtnArr[]="status='SPARE'";
         }
         $edu_code="";
         if($estate!=0)
@@ -112,7 +115,7 @@ switch ($mode)
         $stmt->execute();        
         $rowCnt=$stmt->fetchColumn();
 
-        $SQL="SELECT * FROM db_tank.tm_pay_log WHERE {$cdtn} ORDER BY wdate DESC LIMIT {$start}, {$dataSize}";
+        $SQL="SELECT * FROM db_tank.tl_attend WHERE {$cdtn} ORDER BY wdate DESC LIMIT {$start}, {$dataSize}";
         $stmt=$pdo->prepare($SQL);
         $stmt->execute(); 
 
@@ -125,6 +128,7 @@ switch ($mode)
             [
                 "no"=>$no,
                 "id"=>$rs['id'],
+                "idx"=>$rs['idx'],
                 "name"=>$rs['name'],
                 "orderId"=>$rs['order_no'], 
                 "goods"=>$rs['goods'],

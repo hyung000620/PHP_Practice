@@ -14,7 +14,7 @@ $dataSize=($dataSize>0)? $dataSize : 30;
 $pageSize=($pageSize>0)? $pageSize : 10;
 $today=date("Y-m-d");
 
-$SQL="SELECT * FROM {$my_db}.tl_edu WHERE edate >= '{$today}'";
+$SQL="SELECT * FROM {$my_db}.tl_edu WHERE 1";
 $stmt=$pdo->prepare($SQL);
 $stmt->execute();
 $edu_arr=array();
@@ -69,6 +69,7 @@ while($rs=$stmt->fetch())
         </td>
 		<td class="center"><input type="button" value="검색하기" style="cursor:pointer" onclick="list_();"></td>
 		<td class="last center"><input type="button" value="초기화" onclick="reset_();"  style="cursor:pointer"></td>
+		<td><input type="button" value="문자발송" onclick="send_sms()"></td>
 	</tr>
 </table>
 </form>
@@ -79,7 +80,7 @@ while($rs=$stmt->fetch())
 <div class='move_position'></div>
 <div id="tosspay_block">
   <div id="naviHead"></div>	
-  <table class="tbl_grid border">
+  <table id="edu_list" class="tbl_grid border">
      <thead id="vsThead"></thead>
      <tbody id="vsTbody"></tbody>
   </table>
@@ -94,7 +95,7 @@ $(document).ready(function()
   //가상계좌 결제대기
 	list_();
   //list>mouseover
-  setTimeout(function(){listMouseOver($(".list"));},80); 
+  setTimeout(function(){listMouseOver($(".list"));chk_all();},80); 
   
 	//history
 	(function(window)
@@ -113,7 +114,8 @@ $(document).ready(function()
 				list_();
 			}
 		});
-	})(window);	
+	})(window);
+    	
 });
 
 function list_()
@@ -134,8 +136,10 @@ function list_()
 		{
 		  if(typeof data.pay_people != "undefined"){
 			navi.push("<div style='float:right' class='bold f15'>인원:"+data.pay_people+"/"+data.edu_people+"</div>");
-		  }
+		  }		
+
 		  arr_head.push("<tr>");
+          arr_head.push(" <th><input type=\"checkbox\" id=\"chk_all\"></th>");
 		  arr_head.push(" <th>No</th>");
 		  arr_head.push(" <th>회원명</th>");
 		  arr_head.push(" <th>아이디</th>");
@@ -161,17 +165,19 @@ function list_()
                   if(payopt==1){payopt="카드";}
                   else if(payopt==0){payopt="무통장입금";}
                   else if(payopt==4){payopt="가상계좌";}
-                  else{payopt="예비후보";}	
-				  arr_body.push("<tr onclick=\"location.href='/SuperAdmin/member/member_detail.php?id="+this.id+"'\" style='cursor:pointer' class='list'>");
-				  arr_body.push(" <td class='center'>"+this.no+"</td>");
-				  arr_body.push(" <td class='center'>"+this.name+"</td>");
-				  arr_body.push(" <td>"+this.id+"</td>");
-                  arr_body.push(" <td>"+this.ptnr+"</td>")
-				  arr_body.push(" <td>"+this.goods+"</td>");
-				  arr_body.push(" <td class='right bold red'>"+this.pay_price+"</td>");
-				  arr_body.push(" <td class='bold'>"+payopt+"</td>");
-				  arr_body.push(" <td class='center'>"+this.wdate+"</td>");
-				  arr_body.push(" <td class='center'>"+status+"</td>");
+                  else{payopt="예비후보";}
+                  let onclick=`onclick="location.href='/SuperAdmin/member/member_detail.php?id=+${this.id}'"`;
+				  arr_body.push("<tr style='cursor:pointer' class='list'>");
+                  arr_body.push("<td class='center'><input type='checkbox' name='chk_idx' id='chk_idx' value='"+this.id+"||"+this.idx+"'></td>")
+				  arr_body.push(" <td class='center' "+onclick+">"+this.no+"</td>");
+				  arr_body.push(" <td class='center' "+onclick+">"+this.name+"</td>");
+				  arr_body.push(" <td "+onclick+">"+this.id+"</td>");
+                  arr_body.push(" <td "+onclick+">"+this.ptnr+"</td>")
+				  arr_body.push(" <td "+onclick+">"+this.goods+"</td>");
+				  arr_body.push(" <td class='right bold red' "+onclick+">"+this.pay_price+"</td>");
+				  arr_body.push(" <td class='bold' "+onclick+">"+payopt+"</td>");
+				  arr_body.push(" <td class='center' "+onclick+">"+this.wdate+"</td>");
+				  arr_body.push(" <td class='center' "+onclick+">"+status+"</td>");
 				  //arr_body.push(" <td class='center'><span style='padding:5px 10px;color:#fff;background-color:blue;cursor:pointer;-moz-border-radius:12px;-webkit-border-radius:12px;border-radius:12px;'>SMS</span></td>");
 				  arr_body.push("</tr>");
 				});				 
@@ -186,6 +192,35 @@ function list_()
 	});
 	//list>mouseover
 	setTimeout(function(){listMouseOver($(".list"));},80); 
+}
+function chk_all()
+{
+    //전체 선택/해제
+	$("#chk_all").click(function(){
+		var bool=(this.checked==true) ? true : false;
+		$("input:checkbox[name=chk_idx]").each(function(){
+			this.checked=bool;
+		})
+	});
+}
+//문자 보내기
+function send_sms()
+{
+	var arr=[];
+	$("#edu_list input:checkbox[name=chk_idx]:checked").each(function(){
+		var str=$(this).val();
+		var sp_uid=str.split("||");
+		var uid=sp_uid[0];
+		arr.push("'"+uid+"'");
+	});
+	if(arr.length==0)
+	{
+		alert("선택한 회원이 없습니다.");
+		return;
+	}
+	var json_str="["+arr.join(",")+"]";
+	id_list_json=eval("("+json_str+")");	//String To JSON
+	window.open("/SuperAdmin/member/sms_write.php","send_sms","width=800,height=500,scrollbars=yes");
 }
 
 function reset_()

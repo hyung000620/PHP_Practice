@@ -107,6 +107,11 @@ if($on_off == '오프라인 강의신청') {
         <th>(오프라인)모집정원</th>
         <th>온라인</th>
         <th>오프라인</th>
+		<th>(오프라인)예비접수
+			<span class="tooltip blue-tooltip" style="position:relative;top:0px;"><p class="btn_whitegray radius_30 center" style='width:17px;font-size:11px'>?</p><span style="position:absolute;left:100px;width:330px;">
+				결원이 생길 시 차순으로 <br>기재 된 연락처로 연락드립니다. <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font class='red'> ★ </font>(회원정보수정에서 꼭 <font class='red'>번호 기재</font> 부탁드립니다!)
+			</span></span>
+		</th>
 	</tr>
 <?
 $stmt=$pdo->prepare("SELECT * FROM {$my_db}.tl_edu WHERE rdate<='{$dtm}'");
@@ -134,10 +139,10 @@ while($rs=$stmt->fetch())
     $off_o="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_0' name=\"edu\" value='{$pay}' data-code='{$rs['edu_title']}'></td>"; //오프라인 오픈
     $off_x="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_0' name=\"edu\" value='{$pay}' data-code='{$rs['edu_title']}' disabled></td>"; //오프라인 오프
     $on_o="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_1' name=\"edu\" value='{$pay}' data-code='{$rs['edu_title']}'></td>"; //온라인 오픈
-    $on_x="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_1' name=\"edu\" value='{$pay}' data-code='{$rs['edu_title']}'  disabled></td>"; //오프라인 오프
-    
+    $on_x="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_1' name=\"edu\" value='{$pay}' data-code='{$rs['edu_title']}' disabled></td>"; //온라인 오프
+    $spare_o="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_2' name=\"edu\" value='{$pay}' data-code='{$rs['edu_title']}'></td>";
+	$spare_x="<td class='center'><input type='radio' id='chk_{$rs[edu_code]}_2' name=\"edu\" value='{$pay}' data-code='{$rs['edu_title']}' disabled></td>";
     if($rs['state']==0 && $rs['sdate']<$today){$tr="";}
-
     $html[]=$tr;
     switch($rs['state'])
     {
@@ -146,9 +151,21 @@ while($rs=$stmt->fetch())
         {
             if($rs['sdate']>=$today)
             {
-                if($rs['on_off']==0){$html[]=$on_x;$html[]=($rs['pay_people']>=$rs['edu_people'])?$off_x:$off_o;}
-                elseif($rs['on_off']==1){$html[]=$on_o;$html[]=$off_x;}
-                else{$html[]=$on_o;$html[]=($rs['pay_people']>=$rs['edu_people'])?$off_x:$off_o;}
+                if($rs['on_off']==0){
+					$html[]=$on_x;
+					$html[]=($rs['pay_people']>=$rs['edu_people'])?$off_x:$off_o;
+					$html[]=($rs['pay_people']>=$rs['edu_people'] && $rs['can_people']<=$rs['spare_people'])?$spare_o:$spare_x;
+				}
+                elseif($rs['on_off']==1){
+					$html[]=$on_o;
+					$html[]=$off_x;
+					$html[]=$spare_x;
+				}
+                else{
+					$html[]=$on_o;
+					$html[]=($rs['pay_people']>=$rs['edu_people'])?$off_x:$off_o;
+					$html[]=($rs['pay_people']>=$rs['edu_people'] && $rs['can_people']<=$rs['spare_people'])?$spare_o:$spare_x;
+				}
             }
         }break;
         ##전체 마감(수동)
@@ -156,12 +173,13 @@ while($rs=$stmt->fetch())
         {
             $html[]=$on_x;
             $html[]=$off_x;
+			$html[]=$spare_x;
         }break;
         ##오프라인 마감(수동)
         case 2:
         {
             if($rs['on_off']==0){$html[]=$on_x;$html[]=$off_x;}
-            else{$html[]=$on_o;$html[]=$off_x;}
+            else{$html[]=$on_o;$html[]=$off_x;$html[]=$spare_x;}
         }break;
         ##결제창 활성화(수동)
         case 3:
@@ -191,8 +209,9 @@ echo $html;
 	<tr  height='40'>
 		<th>결제방법</th>
 		<td>
-		  <label for="pay_opt1" class="hand fleft" style="width:100px"><input type="radio" id="pay_opt1" name="pay_opt" value="1" class='rdo'> <span class="rdo_ment">카드결제</span></label>
+		  <label id='pay1' for="pay_opt1" class="hand fleft" style="width:100px"><input type="radio" id="pay_opt1" name="pay_opt" value="1" class='rdo'> <span class="rdo_ment">카드결제</span></label>
 			<label id='pay4' for="pay_opt4" class="hand fleft" style="width:100px"><input type="radio" id="pay_opt4" name="pay_opt" value="4" class='rdo'> <span class="rdo_ment">가상계좌</span></label>
+			<label id='pay5'for="pay_opt5" class="hand fleft" style="width:100px; display:none;"><input type="radio" id="pay_opt5" name="pay_opt" value="5" class='rdo'> <span class="rdo_ment">예비접수</span></label>
 			<? if(!$mobile_agent) : ?>
 			<label style='display:inline-block'>
 				<span class="pay_opt_ment1 blue bold pay_opt_ment" >(카드결제 승인과 동시에 <span class='red'>자동으로 오픈</span>됩니다.)</span>
@@ -214,7 +233,6 @@ echo $html;
 		<td><input type="text" id="" name="pay_name" value="<?=$client_name?>" class="tx150"> (입금자 확인으로 시간이 지연 되니, 전화 주시면 바로 사용 가능합니다.) </td>
 	</tr>
 </table>
-<span id="off_ment" class="blue bold" style='display:none'>(경매교육은 <span class='red'>카드결제만 가능</span>합니다.)</span>
 
 <br>
 <div class="center"><a href="javascript:pay()"><span class="btn_box_ss btn_tank radius_10" style="width:130px">신청 및 결제하기</span></a></div>
@@ -273,8 +291,8 @@ function payform_ctrl(pay_code)
         $("#tbl_price_lect input:checkbox:checked").prop("checked",false);	
         $("#tbl_price_off").hide();
 		$("#tbl_price_lect").show();
-        $("#off_ment").hide();
-		$("#pay4").show();
+		$('#pay1,#pay4').show();
+		$("#pay5").hide();
 
 	}
     else if(pay_code==102)
@@ -282,9 +300,8 @@ function payform_ctrl(pay_code)
         $("#tbl_price_off input:radio:checked").prop("checked",false);
 		$("#tbl_price_lect").hide();
         $("#tbl_price_off").show();
-		$("#off_ment").show();
-        $("#pay4").hide();
-
+		$('#pay1,#pay4').show();
+		$("#pay5").hide();
     }
 	
 	$("#area_info").text("선택전");
@@ -361,8 +378,24 @@ function calc_off(obj)
             let price = this.value;
             let title = this.dataset.code;
             smp_arr.push(state+":"+on_off+":"+price);
-            if(on_off == 0){area_arr.push(title+"(오프라인)");}
-            else{area_arr.push(title+"(온라인)");}
+            if(on_off == 0){
+				area_arr.push(title+"(오프라인)");
+				$('#pay_opt1').prop('checked',true);
+				$('#pay1,#pay4').show();
+				$('#pay5').hide();
+			}
+            else if(on_off == 1){
+				area_arr.push(title+"(온라인)");
+				$('#pay_opt1').prop('checked',true);
+				$('#pay1,#pay4').show();
+				$('#pay5').hide();
+			}
+			else{
+				area_arr.push(title+"(오프라인)_예비접수");
+				$('#pay1,#pay4').hide();
+				$('#pay5').show();
+				$('#pay_opt5').prop('checked',true);
+			}
             amt+=parseInt(price);
         }
     });
@@ -399,17 +432,23 @@ function pay()
 	if($("#area_info").text()=="선택전" && $("#amt").val() > 0){location.reload();}
 	if($("#amt").val()==0){alert("선택한 항목이 없습니다.");	return;}	
     
-	//가상계좌분기
-  if($("#pay_opt4").is(":checked") == true){$("#fm_pay").attr("action","Tosspay_order.php");}
-	else
-	{
-	  if($("#pay_opt1").is(":checked") == true || $("#pay_opt3").is(":checked") == true)
-	  {
-	    //IE10이하는 구모듈로 분기
-	    if(ieVersion !== -1 && ieVersion < 11){$("#fm_pay").attr("action","XPay_order.php");}
-	    else{$("#fm_pay").attr("action","Tosspay_order.php");}
-	  }
-	}	
+	if($("#pay_opt5").is(":checked")==true){
+		$("#fm_pay").attr("action","Tosspay_lec_spare.php");
+	}
+	else{
+		//가상계좌분기
+		if($("#pay_opt4").is(":checked") == true){$("#fm_pay").attr("action","Tosspay_order.php");}
+		else
+		{
+			if($("#pay_opt1").is(":checked") == true || $("#pay_opt3").is(":checked") == true)
+			{
+				//IE10이하는 구모듈로 분기
+				if(ieVersion !== -1 && ieVersion < 11){$("#fm_pay").attr("action","XPay_order.php");}
+				else{$("#fm_pay").attr("action","Tosspay_order.php");}
+			}
+	}
+	}
+		
 	$("#fm_pay").submit();
 }
 <? if($ref=="aply_lect") : ?>

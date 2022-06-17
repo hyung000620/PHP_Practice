@@ -129,7 +129,23 @@ switch ($mode)
       $USQL="UPDATE {$my_db}.tm_pay_log SET paymentkey='{$tosspaymentKey}', status='{$status}', secret='{$secret}', mobile='{$mobilePhone}', receipt_type='카드매출전표', receipt_url='{$receiptUrl}', wdate='{$requestedAt}', order_ip='{$remoteip}', result_log='{$toss_data}' WHERE order_no='{$orderId}' AND id='{$client_id}'";
       $stmt=$pdo->prepare($USQL);
       $stmt->execute();
-
+        //경매교육 > 수강신청 db 처리
+      if($pay_code==102)
+      {
+        $SQL="UPDATE {$my_db}.tl_attend SET paymentkey='{$tosspaymentKey}', status='{$status}', mobile='{$mobilePhone}',wdate='{$requestedAt}' WHERE order_no={$orderId} AND id='{$client_id}'";
+        $stmt=$pdo->prepare($SQL);
+        $stmt->execute();
+        
+        if($flogFlag==0){$toss->fileLog("[result] 카드결제 > log 40-1", $SQL);}
+        //오프라인 > 선착순 카운팅
+        list($edu_code, $on_off, $price)=explode(":",$smp);
+        if($on_off==0)
+        {
+            $SQL="UPDATE {$my_db}.tl_edu SET pay_people=(pay_people+1) WHERE edu_code = '{$edu_code}'";
+            $stmt=$pdo->prepare($SQL);
+            $stmt->execute();
+        }
+      }  
       #파일로그
       if($flogFlag==0){$toss->fileLog("[result] 카드결제 > log 40", $USQL);}
       
@@ -259,7 +275,24 @@ switch ($mode)
       ### pay_log > update
       $USQL="UPDATE {$my_db}.tm_pay_log SET paymentkey='{$tosspaymentKey}', status='{$status}', secret='{$secret}', mobile='{$mobilePhone}', receipt_type='{$rec_type}', receipt_url='{$rec_receiptUrl}', accountNumber='{$accountNumber}', accountType='{$accountType}', accountBank='{$accountBank}', customerName='{$customerName}', dueDate='{$dueDate}', wdate='{$requestedAt}', order_ip='{$remoteip}', result_log='{$toss_data}' WHERE order_no='{$orderId}' AND id='{$client_id}'";
       $stmt=$pdo->prepare($USQL);
-      $stmt->execute();  
+      $stmt->execute();
+        //경매교육 > 수강신청 db 처리
+        if($pay_code==102)
+        {
+            $SQL="UPDATE {$my_db}.tl_attend SET paymentkey='{$tosspaymentKey}', status='{$status}', mobile='{$mobilePhone}',wdate='{$requestedAt}',dueDate='{$dueDate}' WHERE order_no={$orderId} AND id='{$client_id}'";
+            $stmt=$pdo->prepare($SQL);
+            $stmt->execute();
+            
+            if($flogFlag==0){$toss->fileLog("[result] 가상계좌결제신청 > log 40-1", $SQL);}
+            //오프라인 > 선착순 카운팅
+            list($edu_code, $on_off, $price)=explode(":",$smp);
+            if($on_off==0)
+            {
+                $SQL="UPDATE {$my_db}.tl_edu SET pay_people=(pay_people+1) WHERE edu_code = '{$edu_code}'";
+                $stmt=$pdo->prepare($SQL);
+                $stmt->execute();
+            }
+        }  
       #파일로그
       if($flogFlag==0){$toss->fileLog("[result] 가상계좌결제신청 > log 40", $USQL);}
       ### pay_log > update
@@ -408,6 +441,13 @@ switch ($mode)
         $mobile=str_replace("-", "", $rs['mobile']);
         send_sms($mobile,$msg,$client_id);	
       }
+       //경매교육 > 수강신청 db 처리
+       if($pay_code==102)
+       {
+         $SQL="UPDATE {$my_db}.tl_attend SET status='{$status}' WHERE order_no='{$order_no}' AND id='{$id}'";
+         $stmt=$pdo->prepare($SQL);
+         $stmt->execute();
+       }  
       $toss->fileLog("[result callback]======================================================", "가상계좌 입금처리 완료");
     }
     else if($status == 'CANCELED')
@@ -423,15 +463,25 @@ switch ($mode)
       $stmt->execute();
       #파일로그
       if($flogFlag==0){$toss->fileLog("[result callback] status 업데이트> log 13", $USQL);}
-      
-    //   list($state,$month,$price)=explode(":",$v);
-    //   if($pay_code==102 && $state==0)
-    //   {
-    //     $SQL="UPDATE {$my_db}.tl_edu SET pay_people=(pay_people-1) WHERE edu_code = {$state}";
-    //     $stmt=$pdo->prepare($USQL);
-    //     $stmt->execute();
-    //     if($flogFlag==0){$toss->fileLog("[result callback] status 업데이트> log 13", $SQL);}
-    //   }
+      #선착순 디카운팅
+      $SQL="SELECT * FROM {$my_db}.tm_pay_log WHERE order_no='{$order_no}' AND id = '{$id}'";
+      $stmt=$pdo->prepare($SQL);
+      $stmt->execute();
+      $rs=$stmt->fetch();
+      $pay_code=$rs['pay_code'];
+      list($edu_code,$on_off,$price)=explode(":",$rs['smp']);
+      if($pay_code ==102)
+      {
+        $SQL="UPDATE {$my_db}.tl_attend SET status='{$status}' WHERE order_no='{$order_no}' AND id='{$client_id}'";
+         $stmt=$pdo->prepare($SQL);
+         $stmt->execute();
+         if($on_off==0)
+         {
+            $SQL="UPDATE {$my_db}.tl_edu SET pay_people=(pay_people-1) WHERE edu_code = {$edu_code}";
+            $stmt=$pdo->prepare($SQL);
+            $stmt->execute();
+         }
+      }
     }
   } break;
 }
