@@ -5,11 +5,21 @@ if($_GET['mode']!=10)
   $member_only = true;
   $cpn_deny    = true;
 }
-include($_SERVER["DOCUMENT_ROOT"]."/inc/header.php");
+
+if($_GET['mode']>10)
+{
+    $mode=substr($_GET['mode'],0,1);
+    $pay_type="1";
+    include($_SERVER["DOCUMENT_ROOT"]."/lec/inc/header.php");
+}else{
+    include($_SERVER["DOCUMENT_ROOT"]."/inc/header.php");
+}
+
 include($_SERVER["DOCUMENT_ROOT"]."/member/Toss.php");
 
-$mode=(int)$mode;
+$mode=(int)substr($mode,0,1);
 $html=array();
+if($pay_type){$html[]="<div class='wrap'>";}
 $remoteip=$_SERVER['REMOTE_ADDR']; 
  
 #결제 > 카드(1), 계좌이체(3), 가상계좌(4)
@@ -222,7 +232,7 @@ switch ($mode)
         if($goods_count == 0) {$msg="▣탱크옥션▣\\r\\n{$method} 결제 완료.\\r\\n{$first_goods[0]}";} 
         else                  {$msg="▣탱크옥션▣\\r\\n{$method} 결제 완료.\\r\\n{$first_goods[0]} 외 {$goods_count}건";}
         $mobile=str_replace("-", "", $rs['mobile']);
-        send_sms($mobile,$msg,$client_id);	
+        send_sms($mobile,$msg,$client_id);
       }   
       
       $toss->fileLog("[Tosspay_result]=========================================================", "계좌이체 {$settlementStatus}");     
@@ -488,8 +498,17 @@ switch ($mode)
 
 if($mode!=10)
 {
+  if($pay_type){$html[]="</div>";}
   $bind_html=implode("",$html);
-  echo $bind_html;
-  include($_SERVER["DOCUMENT_ROOT"]."/inc/footer.php");
+  echo $bind_html;  
+}
+
+if($mode>10)
+{
+    include($_SERVER["DOCUMENT_ROOT"]."/lec/inc/footer.php");
+}
+else
+{
+    include($_SERVER["DOCUMENT_ROOT"]."/inc/footer.php");
 }
 ?>

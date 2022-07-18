@@ -2,9 +2,17 @@
   $page_code="901600";
   $member_only=true;
   $cpn_deny = true;
-  include($_SERVER["DOCUMENT_ROOT"]."/inc/header.php");
+  if($_POST['pay_type']=="edu")
+  {
+    include($_SERVER["DOCUMENT_ROOT"]."/lec/inc/header.php");
+  }
+  else
+  {
+    include($_SERVER["DOCUMENT_ROOT"]."/inc/header.php");
+  }
+
   include($_SERVER["DOCUMENT_ROOT"]."/member/Toss.php");
-  
+
   #param check
   $order_no=(int)$order_no;
   $pay_code=(int)$pay_code;
@@ -77,8 +85,8 @@
   if($paramFlag==1){alertBack("결제 방식이 잘못 되었습니다. 다시 시도해 주시기 바랍니다.1");}
 
   /*
-  Point 정책 적용시 고려사항
-  Point (point, fee, amount) > 포인트는 양수, 1000원이상, 사용가능포인트체크
+    Point 정책 적용시 고려사항
+    Point (point, fee, amount) > 포인트는 양수, 1000원이상, 사용가능포인트체크
   */
       
   #DB > log
@@ -91,7 +99,7 @@
   }
   $smp_fm=base64_encode($smp);
 ?>
-
+<?if($pay_type=="edu") echo "<div class='wrap'>"?>
 <div class='f20 bold center' style='padding:100px 0 30px'>회원님께서 신청하신 항목은 아래와 같습니다. 확인 후 결제를 진행 해 주세요.</div>
 <div class='f14 bold'>· 결제 항목</div>
 <table class="tbl_new_grid" style='border-top:1px solid #000'>
@@ -133,6 +141,7 @@ echo $html;
   <input type='hidden' name='amt' id='amt' value="<?=$amt?>">
   <input type='hidden' name='dc_rate' id='dc_rate' value="<?=$dc_rate?>">
   <input type='hidden' name='log_data' id='log_data' value="<?=$log_data_fm?>">
+  <input type='hidden' name='pay_type' id='pay_type' value="<?=$pay_type?>">
 </form>
 
 <!-- 전화번호 수정 -->
@@ -162,8 +171,19 @@ echo $html;
 </div>
 <br><br>
 <div class="center"><span class='btn_box_ss btn_tank radius_10'  id="payment-button">결제하기</span></div>
-
-<? include($_SERVER["DOCUMENT_ROOT"]."/inc/footer.php"); ?>
+<!-- </div> -->
+<?
+if($pay_type=="edu")
+{
+    echo "</div>";
+    include($_SERVER["DOCUMENT_ROOT"]."/lec/inc/footer.php");
+    $pay_type=1;
+} 
+else
+{
+    include($_SERVER["DOCUMENT_ROOT"]."/inc/footer.php");
+}
+?>
 
 <!-- 결제창을 연동할 HTML페이지에 일반 결제 JavaScript 파일을 추가 -->
 <script src="https://js.tosspayments.com/v1"></script>
@@ -183,11 +203,12 @@ echo $html;
   		  var success=data.success;
   		  if(success==1)
   		  { 
-  		    let returnURL = "https://" + window.location.hostname + "/member/Tosspay_result.php";		     
+  		    let returnURL = "https://" + window.location.hostname + "/member/_Tosspay_result.php";		     
   		    let failURL   = "https://" + window.location.hostname + "/member/Tosspay_fail.php";
-  		    let virtualURL= "https://" + window.location.hostname + "/member/Tosspay_result.php?mode=10"; 
+  		    let virtualURL= "https://" + window.location.hostname + "/member/_Tosspay_result.php?mode=10";
+             
           let customerTaxType = "소득공제";      
-          let method = '<?=$paycd_str?>'; 
+          let method = '<?=$paycd_str?>';
           switch(method)
           {
             case '카드' :
@@ -198,7 +219,7 @@ echo $html;
                 orderId: "<?=$order_no?>",
                 orderName: "탱크옥션",
                 customerName: "<?=$client_name?>",
-                successUrl: returnURL+"?mode=1",
+                successUrl: returnURL+"?mode=1<?=$pay_type?>",
                 failUrl: failURL
               }).catch(function(error) {alert(error.message);});
             } break;
@@ -210,7 +231,7 @@ echo $html;
                 orderId: "<?=$order_no?>",
                 orderName: "탱크옥션",
                 customerName: "<?=$client_name?>",
-                successUrl: returnURL+"?mode=3",
+                successUrl: returnURL+"?mode=3<?=$pay_type?>",
                 failUrl: failURL
               }).catch(function(error){alert(error.message);});                
             } break;
@@ -225,7 +246,7 @@ echo $html;
                 customerName: "<?=$client_name?>",
                 validHours: 12,
                 cashReceipt: {type: customerTaxType},
-                successUrl: returnURL+"?mode=4",
+                successUrl: returnURL+"?mode=4<?=$pay_type?>",
                 failUrl: failURL,
                 virtualAccountCallbackUrl: virtualURL
               }).catch(function(error){alert(error.message);});               
@@ -235,7 +256,7 @@ echo $html;
   		  else
   		  {
   		    alert('결제 오류가 발생되었습니다'); 
-  		    history.back( -1 );
+  		    //history.back( -1 );
         }
   		}   
     });
