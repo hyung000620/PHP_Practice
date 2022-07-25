@@ -32,5 +32,5 @@ foreach($_queryArr as $q)
 $ref_from="solar";
 $client_id="solar";
 
-include $_SERVER["DOCUMENT_ROOT"].$_path;
+include $_SERVER["DOCUMENT_ROOT"].$_path; 
 ?>
